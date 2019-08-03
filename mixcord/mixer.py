@@ -10,13 +10,15 @@ class MixerAPI:
         self.session = requests.Session()
         self.session.headers.update({ "Client-ID": self.client_id })
 
-    def get_channel(self, username):
-        url = "{}/channels/{}".format(self.API_URL, username)
+    def get_channel(self, id_or_token):
+        url = "{}/channels/{}".format(self.API_URL, id_or_token)
         response = self.session.get(url)
         return response.json()
 
-    def get_channel_id(self, username):
-        return self.get_channel(username)["id"]
+    def get_user(self, user_id):
+        url = "{}/users/{}".format(self.API_URL, user_id)
+        response = self.session.get(url)
+        return response.json() # https://pastebin.com/paR8PfSn
 
     def get_discord(self, channel_id):
         url = "{}/channels/{}/discord".format(self.API_URL, channel_id)
