@@ -27,3 +27,13 @@ class MixerAPI:
         url = "{}/chats/{}".format(self.API_URL, channel_id)
         response = self.session.get(url)
         return response.json()
+
+    def get_shortcode(self):
+        url = "{}/oauth/shortcode".format(self.API_URL)
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "scope": ""
+        }
+        response = requests.post(url, data)
+        return response.json()

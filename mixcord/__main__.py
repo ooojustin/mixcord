@@ -9,6 +9,9 @@ settings = json.loads(settings_raw)
 import database
 database.init()
 
+# mixer initialization
+mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
+
 # discord bot initialization
 import discord, logging
 from discord.ext import commands
@@ -21,6 +24,17 @@ async def on_ready():
 
 @bot.command()
 async def mixcord(ctx):
-    await ctx.send("got it")
+
+    # TODO: make sure discord id isn't already in database
+
+    # get shortcode stuff from mixer
+    shortcode = mixer.get_shortcode()
+    code = shortcode["code"]
+    handle = shortcode["handle"]
+
+    # tell the user what to do to link their mixer account
+    await ctx.send("Visit the following page to link your Mixer: https://mixer.com/go?code=" + code)
+
+    # TODO: poll url w/ handle
 
 bot.run(settings["discord"]["token"])
