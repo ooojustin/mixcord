@@ -124,3 +124,6 @@ dmypy.json
 
 # Configuration file
 settings.cfg
+
+# Database file (sqlite3)
+mixcord.db
