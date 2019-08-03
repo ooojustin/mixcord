@@ -83,6 +83,33 @@ class MixerChat:
         self.token_data = self.api.check_token(access_token)
         self.user_id = self.token_data["sub"]
 
+    async def send_method_packet(self, method, *args):
+        packet = {
+            "type": "method",
+            "method": method,
+            "arguments": list(args),
+            "id": self.packet_id
+        }
+        packet_raw = json.dumps(packet)
+        await self.websocket.send(packet_raw)
+        self.packet_id += 1
+        return packet["id"]
+
+    async def receive_reply_packet(self, id):
+
+        while True:
+
+            packet = await self.websocket.recv()
+            packet = json.loads(packet)
+
+            if packet["type"] != "reply":
+                continue
+
+            if packet["id"] != id:
+                continue
+
+            return packet
+
     async def init(self):
 
         url = "{}/chats/{}".format(self.api.API_URL, self.channel_id)
@@ -90,33 +117,16 @@ class MixerChat:
         response = requests.get(url, headers = headers)
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 
-        async with websockets.connect(chat_info["endpoints"][0]) as websocket:
+        # establish websocket connection and receive welcome packet
+        self.websocket = await websockets.connect(chat_info["endpoints"][0])
+        await self.websocket.recv()
 
-            # receive the welcome packet
-            await websocket.recv()
+        # authenticate connection so we can send messages and stuff
+        auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
+        auth_packet = await self.receive_reply_packet(auth_packet_id)
+        print(json.dumps(auth_packet, indent = 4))
 
-            # build the auth packet
-            auth_packet = {
-                "type": "method",
-                "method": "auth",
-                "arguments": [self.channel_id, self.user_id, chat_info["authkey"]],
-                "id": self.packet_id
-            }
-            await websocket.send(json.dumps(auth_packet))
-            self.packet_id += 1
-
-            await websocket.recv()
-            
-            # send a clear_messages
-            msg_packet = {
-                "type": "method",
-                "method": "msg",
-                "arguments": ["im a bot!"],
-                "id": self.packet_id
-            }
-            await websocket.send(json.dumps(msg_packet))
-            self.packet_id += 1
-
-            while True:
-                packet = await websocket.recv()
-                print(packet)
+        # send a message packet
+        msg_packet_id = await self.send_method_packet("msg", "this is a message from a bot ;D")
+        msg_packet = await self.receive_reply_packet(msg_packet_id)
+        print(json.dumps(msg_packet, indent = 4))
