@@ -1,6 +1,9 @@
 import sqlite3
 
+# database initialization
 db = sqlite3.connect('mixcord.db')
+db.row_factory = sqlite3.Row # fetched rows will have values mapped to column names
+db.isolation_level = None # automatically commit changes to db
 cursor = db.cursor()
 
 def table_exists(name):
