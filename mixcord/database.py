@@ -11,7 +11,12 @@ def insert_user(user_id, channel_id, discord_id):
     params = (user_id, channel_id, discord_id)
     cursor.execute(query, params)
 
-def mixer_from_discord(discord_id):
+def update_tokens(discord_id, access_token, refresh_token, expires):
+    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE discord_id = ?"
+    params = (access_token, refresh_token, expires, discord_id)
+    cursor.execute(query, params)
+
+def user_from_discord(discord_id):
     query = "SELECT * FROM mixcord WHERE discord_id = ?"
     params = (discord_id,)
     cursor.execute(query, params)
@@ -38,6 +43,6 @@ def init():
     	"discord_id"	INTEGER UNIQUE,
     	"access_token"	TEXT,
     	"refresh_token"	TEXT,
-    	"token_expires"	INTEGER DEFAULT 0
+    	"expires"	INTEGER DEFAULT 0
     )
     """)

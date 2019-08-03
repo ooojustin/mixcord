@@ -16,7 +16,7 @@ mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secre
 import discord, logging
 from discord.ext import commands
 logging.basicConfig(level = logging.ERROR)
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix = '!')
 
 @bot.event
 async def on_ready():
@@ -25,12 +25,10 @@ async def on_ready():
 @bot.command()
 async def mixcord(ctx):
 
-    # TODO: make sure we private message the link to the user, if its in a guild
-
     # make sure discord id isn't already in database
     discord_id = ctx.author.id
-    if database.mixer_from_discord(discord_id) is not None:
-        await ctx.send("You've already linked your Mixer account via mixcord.")
+    if database.user_from_discord(discord_id) is not None:
+        await ctx.author.send("You've already linked your Mixer account via mixcord.")
         return
 
     # get shortcode stuff from mixer
@@ -39,7 +37,7 @@ async def mixcord(ctx):
     handle = shortcode["handle"]
 
     # tell the user what to do to link their mixer account
-    await ctx.send("Visit the following page to link your Mixer: <https://mixer.com/go?code={}>".format(code))
+    await ctx.author.send("Visit the following page to link your Mixer: <https://mixer.com/go?code={}>".format(code))
 
     # poll shortcode checking endpoint with handle until we can move on with authorization_code
     while True:
@@ -50,10 +48,10 @@ async def mixcord(ctx):
             authorization_code = response.json()["code"]
             break
         elif status_code == 403:
-            await ctx.send("Failed: user denied permissions.")
+            await ctx.author.send("Failed: user denied permissions.")
             return
         elif status_code == 404:
-            await ctx.send("Failed: verification timed out.")
+            await ctx.author.send("Failed: verification timed out.")
             return
 
     tokens = mixer.get_token(authorization_code)
@@ -62,8 +60,10 @@ async def mixcord(ctx):
 
     user_id = user_data["id"]
     channel_id = user_data["channel"]["id"]
-    database.insert_user(user_id, channel_id, discord_id)
-    await ctx.send("Your Mixer account has been linked: " + user_data["username"])
 
+    database.insert_user(user_id, channel_id, discord_id)
+    database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"])
+
+    await ctx.author.send("Your Mixer account has been linked: " + user_data["username"])
 
 bot.run(settings["discord"]["token"])
