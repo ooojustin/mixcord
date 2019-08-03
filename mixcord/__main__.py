@@ -25,8 +25,13 @@ async def on_ready():
 @bot.command()
 async def mixcord(ctx):
 
-    # shortcode auth method: https://dev.mixer.com/reference/oauth/shortcodeauth
-    # TODO: make sure discord id isn't already in database
+    # TODO: make sure we private message the link to the user, if its in a guild
+
+    # make sure discord id isn't already in database
+    discord_id = ctx.author.id
+    if database.mixer_from_discord(discord_id) is not None:
+        await ctx.send("You've already linked your Mixer account via mixcord.")
+        return
 
     # get shortcode stuff from mixer
     shortcode = mixer.get_shortcode()
@@ -34,7 +39,7 @@ async def mixcord(ctx):
     handle = shortcode["handle"]
 
     # tell the user what to do to link their mixer account
-    await ctx.send("Visit the following page to link your Mixer: https://mixer.com/go?code=" + code)
+    await ctx.send("Visit the following page to link your Mixer: <https://mixer.com/go?code={}>".format(code))
 
     # poll shortcode checking endpoint with handle until we can move on with authorization_code
     while True:
@@ -43,7 +48,6 @@ async def mixcord(ctx):
         status_code = response.status_code
         if status_code == 200:
             authorization_code = response.json()["code"]
-            await ctx.send("Confirmed: " + authorization_code)
             break
         elif status_code == 403:
             await ctx.send("Failed: user denied permissions.")
@@ -52,6 +56,14 @@ async def mixcord(ctx):
             await ctx.send("Failed: verification timed out.")
             return
 
-    # TODO: use authorization_code variable to generate tokens...
+    tokens = mixer.get_token(authorization_code)
+    token_data = mixer.check_token(tokens["access_token"])
+    user_data = mixer.get_user(token_data["sub"])
+
+    user_id = user_data["id"]
+    channel_id = user_data["channel"]["id"]
+    database.insert_user(user_id, channel_id, discord_id)
+    await ctx.send("Your Mixer account has been linked: " + user_data["username"])
+
 
 bot.run(settings["discord"]["token"])
