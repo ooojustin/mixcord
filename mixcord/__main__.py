@@ -1,5 +1,5 @@
 import json, asyncio
-from mixer import MixerAPI
+from mixer import MixerAPI, MixerChat
 
 # determine settings
 settings_raw = open("settings.cfg").read()
@@ -11,6 +11,23 @@ database.init()
 
 # mixer initialization
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
+
+# update chatbot tokens if needed
+token_data = mixer.check_token(settings["mixer"]["access_token"])
+#if not token_data["active"]:
+if True:
+    tokens = mixer.get_token(settings["mixer"]["refresh_token"], refresh = True)
+    settings["mixer"]["access_token"] = tokens["access_token"]
+    settings["mixer"]["refresh_token"] = tokens["refresh_token"]
+    file = open("settings.cfg", "w")
+    file.write(json.dumps(settings, indent = 4))
+    file.close()
+
+# chatbot initiailization ?
+channel = mixer.get_channel(settings["mixer"]["username"])
+mixer_chat = MixerChat(mixer, channel["id"], settings["mixer"]["access_token"], settings["mixer"]["refresh_token"])
+asyncio.get_event_loop().run_until_complete(mixer_chat.init())
+print("zzz")
 
 # discord bot initialization
 import discord, logging

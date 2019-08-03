@@ -1,4 +1,5 @@
-import requests
+import requests, json
+import asyncio, websockets
 
 class MixerAPI:
 
@@ -67,3 +68,23 @@ class MixerAPI:
         data = { "token": token }
         response = self.session.post(url, data)
         return response.json() # https://pastebin.com/SEd6Y2Jz
+
+class MixerChat:
+
+    def __init__(self, api, channel_id, access_token, refresh_token):
+        self.api = api
+        self.channel_id = channel_id
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+
+    async def init(self):
+
+        url = "{}/chats/{}".format(self.api.API_URL, self.channel_id)
+        headers = { "Authorization": "Bearer " + self.access_token }
+        response = requests.get(url, headers = headers)
+        chat_info = response.json() # https://pastebin.com/Z3RyUgBh
+
+        async with websockets.connect(chat_info["endpoints"][0]) as websocket:
+            #await websocket.send("big gay")
+            junk = await websocket.recv()
+            print(junk)
