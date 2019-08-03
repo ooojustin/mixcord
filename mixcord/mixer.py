@@ -71,11 +71,17 @@ class MixerAPI:
 
 class MixerChat:
 
+    packet_id = 0
+
     def __init__(self, api, channel_id, access_token, refresh_token):
         self.api = api
         self.channel_id = channel_id
         self.access_token = access_token
         self.refresh_token = refresh_token
+
+        # get the bots user id
+        self.token_data = self.api.check_token(access_token)
+        self.user_id = self.token_data["sub"]
 
     async def init(self):
 
@@ -85,6 +91,32 @@ class MixerChat:
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 
         async with websockets.connect(chat_info["endpoints"][0]) as websocket:
-            #await websocket.send("big gay")
-            junk = await websocket.recv()
-            print(junk)
+
+            # receive the welcome packet
+            await websocket.recv()
+
+            # build the auth packet
+            auth_packet = {
+                "type": "method",
+                "method": "auth",
+                "arguments": [self.channel_id, self.user_id, chat_info["authkey"]],
+                "id": self.packet_id
+            }
+            await websocket.send(json.dumps(auth_packet))
+            self.packet_id += 1
+
+            await websocket.recv()
+            
+            # send a clear_messages
+            msg_packet = {
+                "type": "method",
+                "method": "msg",
+                "arguments": ["im a bot!"],
+                "id": self.packet_id
+            }
+            await websocket.send(json.dumps(msg_packet))
+            self.packet_id += 1
+
+            while True:
+                packet = await websocket.recv()
+                print(packet)
