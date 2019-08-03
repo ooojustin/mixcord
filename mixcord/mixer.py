@@ -42,3 +42,26 @@ class MixerAPI:
         url = "{}/oauth/shortcode/check/{}".format(self.API_URL, handle)
         response = self.session.get(url)
         return response
+
+    def get_token(self, code_or_token, refresh = False):
+        url = "{}/oauth/token".format(self.API_URL)
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret
+        }
+
+        if refresh:
+            data["grant_type"] = "refresh_token"
+            data["refresh_token"] = code_or_token
+        else:
+            data["grant_type"] = "authorization_code"
+            data["code"] = code_or_token
+
+        response = self.session.post(url, data)
+        return response.json() # https://pastebin.com/n1Kjjphq
+
+    def check_token(self, token):
+        url = "{}/oauth/token/introspect".format(self.API_URL)
+        data = { "token": token }
+        response = self.session.post(url, data)
+        return response.json() # https://pastebin.com/SEd6Y2Jz
