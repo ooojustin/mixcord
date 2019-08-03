@@ -6,8 +6,21 @@ db.row_factory = sqlite3.Row # fetched rows will have values mapped to column na
 db.isolation_level = None # automatically commit changes to db
 cursor = db.cursor()
 
+def insert_user(user_id, channel_id, discord_id):
+    query = "INSERT INTO mixcord (user_id, channel_id, discord_id) VALUES (?, ?, ?)"
+    params = (user_id, channel_id, discord_id)
+    cursor.execute(query, params)
+
+def mixer_from_discord(discord_id):
+    query = "SELECT * FROM mixcord WHERE discord_id = ?"
+    params = (discord_id,)
+    cursor.execute(query, params)
+    return cursor.fetchone()
+
 def table_exists(name):
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,))
+    query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
+    params = (name,)
+    cursor.execute(query, params)
     return cursor.fetchone() is not None
 
 def init():
@@ -20,10 +33,11 @@ def init():
     cursor.execute("""
     CREATE TABLE "mixcord" (
     	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-    	"username"	TEXT,
-    	"discord"	INTEGER UNIQUE,
+    	"user_id"	INTEGER UNIQUE,
+        "channel_id" INTEGER UNIQUE,
+    	"discord_id"	INTEGER UNIQUE,
     	"access_token"	TEXT,
     	"refresh_token"	TEXT,
-    	"token_expires"	INTEGER
+    	"token_expires"	INTEGER DEFAULT 0
     )
     """)
