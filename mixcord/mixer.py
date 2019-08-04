@@ -126,7 +126,8 @@ class MixerChat:
         auth_packet = await self.receive_reply_packet(auth_packet_id)
         print(json.dumps(auth_packet, indent = 4))
 
-        # send a message packet
-        msg_packet_id = await self.send_method_packet("msg", "this is a message from a bot ;D")
-        msg_packet = await self.receive_reply_packet(msg_packet_id)
-        print(json.dumps(msg_packet, indent = 4))
+    def send_message(self, message):
+        async def send_message_async():
+            msg_packet_id = await self.send_method_packet("msg", message)
+            msg_packet = await self.receive_reply_packet(msg_packet_id)
+        asyncio.ensure_future(send_message_async())

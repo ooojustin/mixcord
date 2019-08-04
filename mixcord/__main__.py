@@ -30,6 +30,7 @@ if not token_data["active"]:
 channel = mixer.get_channel(settings["mixer"]["username"])
 mixer_chat = MixerChat(mixer, channel["id"], settings["mixer"]["access_token"], settings["mixer"]["refresh_token"])
 asyncio.get_event_loop().run_until_complete(mixer_chat.init())
+mixer_chat.send_message("testing 123")
 
 # discord bot initialization
 import discord, logging
