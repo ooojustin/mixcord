@@ -1,5 +1,5 @@
 import requests, json, inspect
-import asyncio, websockets
+import asyncio, websockets, shlex
 
 class MixerAPI:
 
@@ -20,16 +20,6 @@ class MixerAPI:
         url = "{}/users/{}".format(self.API_URL, user_id)
         response = self.session.get(url)
         return response.json() # https://pastebin.com/paR8PfSn
-
-    def get_discord(self, channel_id):
-        url = "{}/channels/{}/discord".format(self.API_URL, channel_id)
-        response = self.session.get(url)
-        return response.json()
-
-    def get_chats(self, channel_id):
-        url = "{}/chats/{}".format(self.API_URL, channel_id)
-        response = self.session.get(url)
-        return response.json()
 
     def get_shortcode(self, scope = ""):
         url = "{}/oauth/shortcode".format(self.API_URL)
@@ -71,6 +61,56 @@ class MixerAPI:
 
 class MixerChat:
 
+    class ChatCommands:
+
+        commands = dict()
+
+        def __init__(self, mixer_chat):
+            self.mixer_chat = mixer_chat
+
+        def __call__(self, method):
+            name = method.__name__
+            sig = inspect.signature(method)
+            self.commands[name] = {
+                "method": method,
+                "signature": sig,
+                "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
+            }
+
+        async def handle(self, data):
+
+            # determine the raw message as text
+            message = ""
+            pieces = data["message"]["message"]
+            for piece in pieces: message += piece["text"]
+
+            # command prefix check
+            if message[:1] != ">":
+                return False
+
+            # handle it as a command
+            parsed = shlex.split(message)
+            name = parsed[0][1:]
+            arguments = parsed[1:]
+
+            # make sure the command exists
+            command = self.commands.get(name, None)
+            if command is None:
+                await self.mixer_chat.send_message("unrecognized command '{}'.".format(name))
+                return False
+
+            # make sure we've been supplied the correct number of arguments
+            if len(arguments) != command["param_count"]:
+                print("provided: {}, expected: {}".format(len(arguments), command["param_count"]))
+                await self.mixer_chat.send_message("invalid parameter count for command '{}'.".format(name))
+                return False
+
+            # try to execute the command!
+            func = command["method"]
+            message = await func(data, *arguments)
+            await self.mixer_chat.send_message(message)
+            return True
+
     # used to uniquely identify 'method' packets
     packet_id = 0
 
@@ -98,6 +138,7 @@ class MixerChat:
     def __init__(self, api, channel_id):
         self.api = api
         self.channel_id = channel_id
+        self.commands = self.ChatCommands(self)
 
     def __call__(self, method):
         if inspect.iscoroutinefunction(method):
@@ -133,6 +174,10 @@ class MixerChat:
         await self.send_packet(packet)
         self.packet_id += 1
         return packet["id"]
+
+    async def send_message(self, message):
+        await self.send_method_packet("msg", message)
+        await self.websocket.recv()
 
     def register_method_callback(self, id, callback):
         if inspect.iscoroutinefunction(callback):
@@ -172,17 +217,21 @@ class MixerChat:
             # handle 'event' packets from server
             if packet["type"] == "event":
                 if packet["event"] in self.event_map:
+
+                    # custom handling for chat messages (commands?)
+                    if packet["event"] == "ChatMessage":
+                        await self.commands.handle(packet["data"])
+
+                    # call corresponding event handler
                     func_name = self.event_map[packet["event"]]
                     await self.call_func(func_name, packet["data"])
+
                 continue
 
             # handle 'reply' packets from server
             if packet["type"] == "reply":
                 callback = self.callbacks.pop(packet["id"], None)
                 if callback is not None:
-                    await callback(packet["data"])
+                    response = packet.get("data", packet)
+                    await callback(response)
                 continue
-
-    async def send_message(self, message):
-        await self.send_method_packet("msg", message)
-        await self.websocket.recv()

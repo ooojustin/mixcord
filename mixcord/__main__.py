@@ -1,4 +1,4 @@
-import json, asyncio, sys
+import json, asyncio, sys, random
 from mixer import MixerAPI, MixerChat
 
 # determine settings
@@ -36,19 +36,42 @@ from discord.ext import commands
 logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '!')
 
+@mixer_chat.commands
+async def flip(data):
+    choice = random.randint(0, 1)
+    desc = "heads" if choice else "tails"
+    return "@{} flipped a coin and picked: {}".format(data["user_name"], desc)
+
+@mixer_chat.commands
+async def lunch(data):
+
+    if not "Owner" in data["user_roles"]:
+        return "permission denied. only owner can use 'lunch' command."
+
+    await mixer_chat.send_method_packet(
+        "vote:start",
+        "What should I get for lunch?",
+        ["Chinese Food", "Mexican Food", "Pizza"], 30)
+        
+    return "starting poll for lunch... cast your vote!"
+
+# trigerred when the mixer bot is connected + authenticated
 @mixer_chat
 async def on_ready(username, user_id): #
     print("mixer logged in: {} (uid = {})".format(username, user_id))
     await mixer_chat.send_message("mixcord logged in successfully!")
 
+# trigerred when a user joins the stream
 @mixer_chat
 async def user_joined(data):
     await mixer_chat.send_message("welcome to the stream, " + data["username"])
 
+# triggered when the discord bot is connected + authenticated
 @bot.event
 async def on_ready():
     print('discord logged in:', bot.user)
 
+# triggered when !mixcord command is executed in discord
 @bot.command()
 async def mixcord(ctx):
 
