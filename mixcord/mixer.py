@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, inspect
 import asyncio, websockets
 
 class MixerAPI:
@@ -71,8 +71,28 @@ class MixerAPI:
 
 class MixerChat:
 
+    # used to uniquely identify 'method' packets
     packet_id = 0
+
+    # used to store references to event functions (see __call__ and call_func)
     funcs = dict()
+
+    # map events to functions
+    event_map = {
+        "WelcomeEvent": "welcomed",
+        "ChatMessage": "handle_message",
+        "UserJoin": "user_joined",
+        "UserLeave": "user_left",
+        "PollStart": "poll_started",
+        "PollEnd": "poll_end",
+        "DeleteMessage": "message_deleted",
+        "PurgeMessage": "messages_purged",
+        "ClearMessages": "messages_cleared",
+        "UserUpdate": "user_updated",
+        "UserTimeout": "user_timed_out",
+        "SkillAttribution": "handle_skill",
+        "DeleteSkillAttribution": "skill_cancelled"
+    }
 
     def __init__(self, api, channel_id):
         self.api = api
@@ -82,9 +102,29 @@ class MixerChat:
         if callable(method):
             self.funcs[method.__name__] = method
 
+    async def call_func(self, name, *args):
+
+        # make sure the function exists
+        # these are added via __call__ (@instance_name decorator)
+        if not name in self.funcs:
+            return
+
+        # get a reference to the function
+        func = self.funcs[name]
+
+        # call the function (await if async)
+        if inspect.iscoroutinefunction(func):
+            await func(*args)
+        else:
+            func(*args)
+
     async def send_packet(self, packet):
         packet_raw = json.dumps(packet)
         await self.websocket.send(packet_raw)
+
+    async def receive_packet(self):
+        packet_raw = await self.websocket.recv()
+        return json.loads(packet_raw)
 
     async def send_method_packet(self, method, *args):
         packet = {
@@ -96,21 +136,6 @@ class MixerChat:
         await self.send_packet(packet)
         self.packet_id += 1
         return packet["id"]
-
-    async def receive_reply_packet(self, id):
-
-        while True:
-
-            packet = await self.websocket.recv()
-            packet = json.loads(packet)
-
-            if packet["type"] != "reply":
-                continue
-
-            if packet["id"] != id:
-                continue
-
-            return packet
 
     async def start(self, access_token):
 
@@ -126,24 +151,28 @@ class MixerChat:
 
         # establish websocket connection and receive welcome packet
         self.websocket = await websockets.connect(chat_info["endpoints"][0])
-        await self.websocket.recv()
+        welcome_packet = await self.receive_packet()
+        print(json.dumps(welcome_packet, indent = 4))
 
         # authenticate connection so we can send messages and stuff
         auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
-        auth_packet = await self.receive_reply_packet(auth_packet_id)
-        print(json.dumps(auth_packet, indent = 4))
+        await self.websocket.recv()
 
-        # try to trigger on_ready func
-        if "on_ready" in self.funcs:
-            await self.funcs["on_ready"]()
+        # try to trigger on_ready func, because we're authenticated
+        await self.call_func("on_ready", self.username, self.user_id)
 
-        # handle future messages
+        # infinite loop to handle future packets from server
         while True:
-            packet = json.loads(await self.websocket.recv())
-            print(json.dumps(packet, indent = 4))
 
-    def send_message(self, message):
-        async def send_message_async():
-            msg_packet_id = await self.send_method_packet("msg", message)
-            msg_packet = await self.receive_reply_packet(msg_packet_id)
-        asyncio.ensure_future(send_message_async())
+            # receive a packet from the server
+            packet = await self.receive_packet()
+
+            if packet["type"] == "event":
+                print(packet["event"])
+                if packet["event"] in self.event_map:
+                    func_name = self.event_map[packet["event"]]
+                    await self.call_func(func_name, packet["data"])
+
+    async def send_message(self, message):
+        await self.send_method_packet("msg", message)
+        await self.websocket.recv()

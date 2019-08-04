@@ -37,9 +37,13 @@ logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '!')
 
 @mixer_chat
-async def on_ready(): #
-    print("mixer logged in:", mixer_chat.username)
-    mixer_chat.send_message("mixcord logged in successfully!")
+async def on_ready(username, user_id): #
+    print("mixer logged in:", username, user_id)
+    await mixer_chat.send_message("mixcord logged in successfully!")
+
+@mixer_chat
+async def user_joined(data):
+    await mixer_chat.send_message("welcome to the stream, " + data["username"])
 
 @bot.event
 async def on_ready():
