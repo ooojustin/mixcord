@@ -26,7 +26,7 @@ if not token_data["active"]:
     file.write(json.dumps(settings, indent = 4))
     file.close()
 
-# chatbot initiailization ?
+# mixer chatbot initiailization
 channel = mixer.get_channel(settings["mixer"]["username"])
 mixer_chat = MixerChat(mixer, channel["id"])
 
@@ -35,6 +35,11 @@ import discord, logging
 from discord.ext import commands
 logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '!')
+
+@mixer_chat
+async def on_ready(): #
+    print("mixer logged in:", mixer_chat.username)
+    mixer_chat.send_message("mixcord logged in successfully!")
 
 @bot.event
 async def on_ready():
