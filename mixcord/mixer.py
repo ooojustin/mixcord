@@ -21,12 +21,13 @@ class MixerAPI:
         response = self.session.get(url)
         return response.json() # https://pastebin.com/paR8PfSn
 
-    def get_shortcode(self, scope = ""):
+    def get_shortcode(self, scope = None):
         url = "{}/oauth/shortcode".format(self.API_URL)
+        if scope is None: scope = list()
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "scope": scope
+            "scope": " ".join(scope)
         }
         response = self.session.post(url, data)
         return response.json()

@@ -58,4 +58,4 @@ async def on_ready(username, user_id): #
 # trigerred when a user joins the stream
 @bot
 async def user_joined(data):
-    await bot.send_message("welcome to the stream, " + data["username"])
+    await bot.send_message("welcome to the stream, @" + data["username"])

@@ -15,7 +15,6 @@ scope = [
 "chat:remove_message", "chat:timeout", "chat:view_deleted",
 "chat:whisper"]
 
-scope = " ".join(scope)
 shortcode = mixer.get_shortcode(scope)
 
 url = "https://mixer.com/go?code=" + shortcode["code"]
