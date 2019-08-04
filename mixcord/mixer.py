@@ -110,7 +110,7 @@ class MixerChat:
 
             return packet
 
-    async def init(self):
+    async def start(self):
 
         url = "{}/chats/{}".format(self.api.API_URL, self.channel_id)
         headers = { "Authorization": "Bearer " + self.access_token }
@@ -125,6 +125,11 @@ class MixerChat:
         auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
         auth_packet = await self.receive_reply_packet(auth_packet_id)
         print(json.dumps(auth_packet, indent = 4))
+
+        # handle future messages
+        while True:
+            packet = json.loads(await self.websocket.recv())
+            print(json.dumps(packet, indent = 4))
 
     def send_message(self, message):
         async def send_message_async():
