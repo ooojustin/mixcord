@@ -1,8 +1,6 @@
 import json, time
 from mixer import MixerAPI
-
-settings_raw = open("settings.cfg").read()
-settings = json.loads(settings_raw)
+from __main__ import settings
 
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
 

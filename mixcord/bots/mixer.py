@@ -10,8 +10,7 @@ mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secre
 
 # update chatbot tokens if needed
 if not "access_token" in settings["mixer"]:
-    print("Required variable 'access_token' missing from settings...\nDid you forget to run init_chatbot.py?")
-    sys.exit()
+    import init_chatbot
 
 # refresh the chatbot access token if needed
 token_data = mixer.check_token(settings["mixer"]["access_token"])
