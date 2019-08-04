@@ -74,8 +74,9 @@ class MixerChat:
     # used to uniquely identify 'method' packets
     packet_id = 0
 
-    # used to store references to event functions (see __call__ and call_func)
+    # used to store references to functions (see __call__ and call_func)
     funcs = dict()
+    callbacks = dict()
 
     # map events to functions
     event_map = {
@@ -99,24 +100,20 @@ class MixerChat:
         self.channel_id = channel_id
 
     def __call__(self, method):
-        if callable(method):
+        if inspect.iscoroutinefunction(method):
             self.funcs[method.__name__] = method
 
     async def call_func(self, name, *args):
 
         # make sure the function exists
         # these are added via __call__ (@instance_name decorator)
-        if not name in self.funcs:
-            return
+        if not name in self.funcs: return
 
         # get a reference to the function
         func = self.funcs[name]
 
-        # call the function (await if async)
-        if inspect.iscoroutinefunction(func):
-            await func(*args)
-        else:
-            func(*args)
+        # call the function
+        await func(*args)
 
     async def send_packet(self, packet):
         packet_raw = json.dumps(packet)
@@ -137,6 +134,11 @@ class MixerChat:
         self.packet_id += 1
         return packet["id"]
 
+    def register_method_callback(self, id, callback):
+        if inspect.iscoroutinefunction(callback):
+            if not id in self.callbacks:
+                self.callbacks[id] = callback
+
     async def start(self, access_token):
 
         # get the bots username and user id
@@ -151,15 +153,15 @@ class MixerChat:
 
         # establish websocket connection and receive welcome packet
         self.websocket = await websockets.connect(chat_info["endpoints"][0])
-        welcome_packet = await self.receive_packet()
-        print(json.dumps(welcome_packet, indent = 4))
 
-        # authenticate connection so we can send messages and stuff
+        # authentication callback (executed when w received reply for 'auth' method)
+        async def auth_callback(data):
+            if data["authenticated"]:
+                await self.call_func("on_ready", self.username, self.user_id)
+
+        # send auth packet and register callback
         auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
-        await self.websocket.recv()
-
-        # try to trigger on_ready func, because we're authenticated
-        await self.call_func("on_ready", self.username, self.user_id)
+        self.register_method_callback(auth_packet_id, auth_callback)
 
         # infinite loop to handle future packets from server
         while True:
@@ -167,11 +169,19 @@ class MixerChat:
             # receive a packet from the server
             packet = await self.receive_packet()
 
+            # handle 'event' packets from server
             if packet["type"] == "event":
-                print(packet["event"])
                 if packet["event"] in self.event_map:
                     func_name = self.event_map[packet["event"]]
                     await self.call_func(func_name, packet["data"])
+                continue
+
+            # handle 'reply' packets from server
+            if packet["type"] == "reply":
+                callback = self.callbacks.pop(packet["id"], None)
+                if callback is not None:
+                    await callback(packet["data"])
+                continue
 
     async def send_message(self, message):
         await self.send_method_packet("msg", message)

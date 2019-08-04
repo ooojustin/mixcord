@@ -38,7 +38,7 @@ bot = commands.Bot(command_prefix = '!')
 
 @mixer_chat
 async def on_ready(username, user_id): #
-    print("mixer logged in:", username, user_id)
+    print("mixer logged in: {} (uid = {})".format(username, user_id))
     await mixer_chat.send_message("mixcord logged in successfully!")
 
 @mixer_chat
