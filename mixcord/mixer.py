@@ -65,8 +65,8 @@ class MixerChat:
 
         commands = dict()
 
-        def __init__(self, mixer_chat):
-            self.mixer_chat = mixer_chat
+        def __init__(self, chat):
+            self.chat = chat
 
         def __call__(self, method):
             name = method.__name__
@@ -89,26 +89,25 @@ class MixerChat:
                 return False
 
             # handle it as a command
-            parsed = shlex.split(message)
-            name = parsed[0][1:]
-            arguments = parsed[1:]
+            parsed = shlex.split(message) # split string by whitespace and account for quotes
+            name = parsed[0][1:] # the name of the command -> 0th item with command prefix removed
+            arguments = parsed[1:] # remove first parsed item, because its the command name
 
             # make sure the command exists
             command = self.commands.get(name, None)
             if command is None:
-                await self.mixer_chat.send_message("unrecognized command '{}'.".format(name))
+                await self.chat.send_message("unrecognized command '{}'.".format(name))
                 return False
 
             # make sure we've been supplied the correct number of arguments
             if len(arguments) != command["param_count"]:
-                print("provided: {}, expected: {}".format(len(arguments), command["param_count"]))
-                await self.mixer_chat.send_message("invalid parameter count for command '{}'.".format(name))
+                await self.chat.send_message("invalid parameter count for command '{}'.".format(name))
                 return False
 
             # try to execute the command!
             func = command["method"]
             message = await func(data, *arguments)
-            await self.mixer_chat.send_message(message)
+            await self.chat.send_message(message)
             return True
 
     # used to uniquely identify 'method' packets
@@ -230,8 +229,13 @@ class MixerChat:
 
             # handle 'reply' packets from server
             if packet["type"] == "reply":
+
+                # see if there's a reply callback for this packet
                 callback = self.callbacks.pop(packet["id"], None)
                 if callback is not None:
+
+                    # invoke callback with data from reply packet
                     response = packet.get("data", packet)
                     await callback(response)
+
                 continue

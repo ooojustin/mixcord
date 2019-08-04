@@ -1,5 +1,4 @@
-import json, asyncio, sys, random
-from mixer import MixerAPI, MixerChat
+import json, asyncio
 
 # determine settings
 settings_raw = open("settings.cfg").read()
@@ -9,115 +8,11 @@ settings = json.loads(settings_raw)
 import database
 database.init()
 
-# mixer initialization
-mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
-
-# update chatbot tokens if needed
-if not "access_token" in settings["mixer"]:
-    print("Required variable 'access_token' missing from settings...\nDid you forget to run init_chatbot.py?")
-    sys.exit()
-
-token_data = mixer.check_token(settings["mixer"]["access_token"])
-if not token_data["active"]:
-    tokens = mixer.get_token(settings["mixer"]["refresh_token"], refresh = True)
-    settings["mixer"]["access_token"] = tokens["access_token"]
-    settings["mixer"]["refresh_token"] = tokens["refresh_token"]
-    file = open("settings.cfg", "w")
-    file.write(json.dumps(settings, indent = 4))
-    file.close()
-
-# mixer chatbot initiailization
-channel = mixer.get_channel(settings["mixer"]["username"])
-mixer_chat = MixerChat(mixer, channel["id"])
-
-# discord bot initialization
-import discord, logging
-from discord.ext import commands
-logging.basicConfig(level = logging.ERROR)
-bot = commands.Bot(command_prefix = '!')
-
-@mixer_chat.commands
-async def flip(data):
-    choice = random.randint(0, 1)
-    desc = "heads" if choice else "tails"
-    return "@{} flipped a coin and picked: {}".format(data["user_name"], desc)
-
-@mixer_chat.commands
-async def lunch(data):
-
-    if not "Owner" in data["user_roles"]:
-        return "permission denied. only owner can use 'lunch' command."
-
-    await mixer_chat.send_method_packet(
-        "vote:start",
-        "What should I get for lunch?",
-        ["Chinese Food", "Mexican Food", "Pizza"], 30)
-        
-    return "starting poll for lunch... cast your vote!"
-
-# trigerred when the mixer bot is connected + authenticated
-@mixer_chat
-async def on_ready(username, user_id): #
-    print("mixer logged in: {} (uid = {})".format(username, user_id))
-    await mixer_chat.send_message("mixcord logged in successfully!")
-
-# trigerred when a user joins the stream
-@mixer_chat
-async def user_joined(data):
-    await mixer_chat.send_message("welcome to the stream, " + data["username"])
-
-# triggered when the discord bot is connected + authenticated
-@bot.event
-async def on_ready():
-    print('discord logged in:', bot.user)
-
-# triggered when !mixcord command is executed in discord
-@bot.command()
-async def mixcord(ctx):
-
-    # make sure discord id isn't already in database
-    discord_id = ctx.author.id
-    if database.user_from_discord(discord_id) is not None:
-        await ctx.author.send("You've already linked your Mixer account via mixcord.")
-        return
-
-    # get shortcode stuff from mixer
-    shortcode = mixer.get_shortcode()
-    code = shortcode["code"]
-    handle = shortcode["handle"]
-
-    # tell the user what to do to link their mixer account
-    await ctx.author.send("Visit the following page to link your Mixer: <https://mixer.com/go?code={}>".format(code))
-
-    # poll shortcode checking endpoint with handle until we can move on with authorization_code
-    while True:
-        await asyncio.sleep(10)
-        response = mixer.check_shortcode(handle)
-        status_code = response.status_code
-        if status_code == 200:
-            authorization_code = response.json()["code"]
-            break
-        elif status_code == 403:
-            await ctx.author.send("Failed: user denied permissions.")
-            return
-        elif status_code == 404:
-            await ctx.author.send("Failed: verification timed out.")
-            return
-
-    tokens = mixer.get_token(authorization_code)
-    token_data = mixer.check_token(tokens["access_token"])
-    user_data = mixer.get_user(token_data["sub"])
-
-    user_id = user_data["id"]
-    channel_id = user_data["channel"]["id"]
-
-    database.insert_user(user_id, channel_id, discord_id)
-    database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"])
-
-    await ctx.author.send("Your Mixer account has been linked: " + user_data["username"])
+import bots.mixer
+import bots.discord
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(asyncio.gather(
-    bot.start(settings["discord"]["token"]),
-    mixer_chat.start(settings["mixer"]["access_token"]))
+    bots.discord.bot.start(settings["discord"]["token"]),
+    bots.mixer.bot.start(settings["mixer"]["access_token"]))
 )
