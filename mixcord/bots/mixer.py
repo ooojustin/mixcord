@@ -8,19 +8,22 @@ import random, utils
 # initialize general mixer api wrapper
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
 
-# update chatbot tokens if needed
+# initialize chatbot with oauth tokens if needed
 if not "access_token" in settings["mixer"]:
     import init_chatbot
 
 # refresh the chatbot access token if needed
 token_data = mixer.check_token(settings["mixer"]["access_token"])
 if not token_data["active"]:
+
+    # update access_token and refresh_token from server
     tokens = mixer.get_token(settings["mixer"]["refresh_token"], refresh = True)
     settings["mixer"]["access_token"] = tokens["access_token"]
     settings["mixer"]["refresh_token"] = tokens["refresh_token"]
-    file = open("settings.cfg", "w")
-    file.write(json.dumps(settings, indent = 4))
-    file.close()
+
+    # store updated tokens in settings file
+    settings_cfg = json.dumps(settings, indent = 4)
+    utils.write_all_text("settings.cfg", settings_cfg)
 
 # initialize chatbot
 channel = mixer.get_channel(settings["mixer"]["username"])
@@ -28,6 +31,10 @@ bot = MixerChat(mixer, channel["id"])
 
 # import discord bot from bots.discord module
 from bots.discord import bot as discord
+
+@bot
+async def handle_message(data):
+    pass
 
 @bot.commands
 async def flip(data):

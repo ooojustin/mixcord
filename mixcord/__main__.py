@@ -1,7 +1,7 @@
-import json, asyncio
+import json, asyncio, utils
 
 # determine settings
-settings_raw = open("settings.cfg").read()
+settings_raw = utils.read_all_text("settings.cfg")
 settings = json.loads(settings_raw)
 
 # database initialization

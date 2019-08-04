@@ -1,4 +1,4 @@
-import json, time
+import json, time, utils
 from mixer import MixerAPI
 from __main__ import settings
 
@@ -33,8 +33,6 @@ print("Refresh Token:", tokens["refresh_token"])
 
 settings["mixer"]["access_token"] = tokens["access_token"]
 settings["mixer"]["refresh_token"] = tokens["refresh_token"]
-data_raw = json.dumps(settings, indent = 4)
 
-file = open("settings.cfg", "w")
-file.write(data_raw)
-file.close()
+data_raw = json.dumps(settings, indent = 4)
+utils.write_all_text("settings.cfg", data_raw)
