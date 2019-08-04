@@ -28,7 +28,7 @@ if not token_data["active"]:
 
 # chatbot initiailization ?
 channel = mixer.get_channel(settings["mixer"]["username"])
-mixer_chat = MixerChat(mixer, channel["id"], settings["mixer"]["access_token"], settings["mixer"]["refresh_token"])
+mixer_chat = MixerChat(mixer, channel["id"])
 
 # discord bot initialization
 import discord, logging
@@ -87,5 +87,5 @@ async def mixcord(ctx):
 loop = asyncio.get_event_loop()
 loop.run_until_complete(asyncio.gather(
     bot.start(settings["discord"]["token"]),
-    mixer_chat.start())
+    mixer_chat.start(settings["mixer"]["access_token"]))
 )

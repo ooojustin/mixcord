@@ -73,15 +73,9 @@ class MixerChat:
 
     packet_id = 0
 
-    def __init__(self, api, channel_id, access_token, refresh_token):
+    def __init__(self, api, channel_id):
         self.api = api
         self.channel_id = channel_id
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-
-        # get the bots user id
-        self.token_data = self.api.check_token(access_token)
-        self.user_id = self.token_data["sub"]
 
     async def send_method_packet(self, method, *args):
         packet = {
@@ -110,10 +104,14 @@ class MixerChat:
 
             return packet
 
-    async def start(self):
+    async def start(self, access_token):
+
+        # get the bots user id
+        token_data = self.api.check_token(access_token)
+        user_id = token_data["sub"]
 
         url = "{}/chats/{}".format(self.api.API_URL, self.channel_id)
-        headers = { "Authorization": "Bearer " + self.access_token }
+        headers = { "Authorization": "Bearer " + access_token }
         response = requests.get(url, headers = headers)
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 
@@ -122,7 +120,7 @@ class MixerChat:
         await self.websocket.recv()
 
         # authenticate connection so we can send messages and stuff
-        auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
+        auth_packet_id = await self.send_method_packet("auth", self.channel_id, user_id, chat_info["authkey"])
         auth_packet = await self.receive_reply_packet(auth_packet_id)
         print(json.dumps(auth_packet, indent = 4))
 
