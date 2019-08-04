@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from __main__ import settings
 from mixer import MixerAPI, MixerChat
-import random
+import random, utils
 
 # initialize general mixer api wrapper
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
@@ -33,7 +33,18 @@ from bots.discord import bot as discord
 async def flip(data):
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
-    return "@{} flipped a coin and picked: {}".format(data["user_name"], desc)
+    return "flipped a coin and picked: " + desc
+
+@bot.commands
+async def add(data, n1, n2):
+
+    # make sure both inputs are numeric before trying to use them as floats
+    if not utils.is_number(n1) or not utils.is_number(n2):
+        return "please ensure both parameters are numeric."
+
+    # return the sum of the numbers
+    sum = float(n1) + float(n2)
+    return "sum = " + str(sum)
 
 @bot.commands
 async def lunch(data):

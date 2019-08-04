@@ -108,6 +108,7 @@ class MixerChat:
             # try to execute the command!
             func = command["method"]
             message = await func(data, *arguments)
+            message = "@{} {}".format(data["user_name"], message)
             await self.chat.send_message(message)
             return True
 
