@@ -22,6 +22,12 @@ def user_from_discord(discord_id):
     cursor.execute(query, params)
     return cursor.fetchone()
 
+def user_from_mixer(user_id):
+    query = "SELECT * FROM mixcord WHERE user_id = ?"
+    params = (user_id,)
+    cursor.execute(query, params)
+    return cursor.fetchone()
+
 def table_exists(name):
     query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
     params = (name,)
