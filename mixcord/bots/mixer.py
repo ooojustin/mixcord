@@ -29,13 +29,15 @@ if not token_data["active"]:
 channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
 
-async def skill_triggered(packet, payload):
-    await bot.send_message('yay!')
+async def followed(packet, payload):
+    message = "@{} ".format(payload["user"]["username"])
+    message += "thanks for following!" if payload["following"] else "why'd you unfollow :("
+    await bot.send_message(message)
 
 # initialize constellation (TESTING)
 async def constellation_connected(constellation):
-    event_name = "channel:{}:skill".format(channel["id"])
-    await constellation.subscribe(event_name, skill_triggered)
+    event_name = "channel:{}:followed".format(channel["id"])
+    await constellation.subscribe(event_name, followed)
 constellation = MixerConstellation(constellation_connected)
 
 # import discord bot from bots.discord module

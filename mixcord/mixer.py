@@ -293,15 +293,24 @@ class MixerConstellation:
 
         while True:
 
+            # receive packets from server
             packet = await self.receive_packet()
             print(json.dumps(packet, indent = 4))
 
-            if packet["type"] == "event" and packet["event"] == "live":
-                callback = callbacks.get(packet["data"]["channel"], None)
-                if callback is not None:
-                    await callback(packet, packet["data"]["payload"])
+            # make sure it's an event we're subscribed to
+            if packet["type"] != "event": continue
+            if packet["event"] != "live": continue
+
+            # find and invoke the callback function with the packet & payload
+            event_name = packet["data"]["channel"]
+            payload = packet["data"]["payload"]
+            callback = self.callbacks.get(event_name, None)
+            if callback is not None:
+                await callback(packet, payload)
 
     async def subscribe(self, event_name, callback):
+
+        # build livesubscribe packet
         packet = {
             "type": "method",
             "method": "livesubscribe",
@@ -310,8 +319,11 @@ class MixerConstellation:
             },
             "id": self.packet_id
         }
-        self.packet_id += 1
-        print(json.dumps(packet, indent = 4))
+
+        # send packet to server and determine callback
         await self.send_packet(packet)
         self.callbacks[event_name] = callback
+
+        # increment packet id and return unique packet id
+        self.packet_id += 1
         return self.packet_id
