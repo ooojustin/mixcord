@@ -29,8 +29,14 @@ if not token_data["active"]:
 channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
 
+async def skill_triggered(packet, payload):
+    await bot.send_message('yay!')
+
 # initialize constellation (TESTING)
-constellation = MixerConstellation()
+async def constellation_connected(constellation):
+    event_name = "channel:{}:skill".format(channel["id"])
+    await constellation.subscribe(event_name, skill_triggered)
+constellation = MixerConstellation(constellation_connected)
 
 # import discord bot from bots.discord module
 from bots.discord import bot as discord

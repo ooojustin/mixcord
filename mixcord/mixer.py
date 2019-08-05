@@ -270,10 +270,48 @@ class MixerConstellation:
 
     CONSTELLATION_URL = "wss://constellation.mixer.com"
 
+    def __init__(self, on_connected):
+        self.on_connected = on_connected
+        self.callbacks = dict()
+        self.packet_id = 0
+
+    async def send_packet(self, packet):
+        packet_raw = json.dumps(packet)
+        await self.websocket.send(packet_raw)
+
+    async def receive_packet(self):
+        packet_raw = await self.websocket.recv()
+        return json.loads(packet_raw)
+
     async def start(self, access_token):
 
+        # connect to websocket with oauth access token
         headers = { "Authorization": "Bearer " + access_token }
         self.websocket = await websockets.connect(self.CONSTELLATION_URL, extra_headers = headers)
+        await self.receive_packet() # receive welcome packet
+        await self.on_connected(self) # call on_connected func (we should probably subscribe to events)
 
-        packet = await self.websocket.recv()
+        while True:
+
+            packet = await self.receive_packet()
+            print(json.dumps(packet, indent = 4))
+
+            if packet["type"] == "event" and packet["event"] == "live":
+                callback = callbacks.get(packet["data"]["channel"], None)
+                if callback is not None:
+                    await callback(packet, packet["data"]["payload"])
+
+    async def subscribe(self, event_name, callback):
+        packet = {
+            "type": "method",
+            "method": "livesubscribe",
+            "params": {
+                "events": [event_name]
+            },
+            "id": self.packet_id
+        }
+        self.packet_id += 1
         print(json.dumps(packet, indent = 4))
+        await self.send_packet(packet)
+        self.callbacks[event_name] = callback
+        return self.packet_id
