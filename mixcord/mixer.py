@@ -133,7 +133,7 @@ class MixerChat:
             if len(message) > 0:
                 message = "@{} {}".format(data["user_name"], message)
                 await self.chat.send_message(message)
-                
+
             return True
 
     # used to uniquely identify 'method' packets
@@ -268,5 +268,15 @@ class MixerChat:
 
 class MixerConstellation:
 
+    CONSTELLATION_URL = "wss://constellation.mixer.com"
+
     def __init__(self, access_token):
+
         self.access_token = access_token
+
+        headers = { "Authorization": "Bearer " + access_token }
+        self.websocket = await websockets.connect(CONSTELLATION_URL, extra_headers = headers)
+
+    def subscribe(self, event):
+        pass
+        
