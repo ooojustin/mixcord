@@ -129,10 +129,11 @@ class MixerChat:
                 return False
 
             # try to execute the command!
-            func = command["method"]
-            message = await func(data, *arguments)
-            message = "@{} {}".format(data["user_name"], message)
-            await self.chat.send_message(message)
+            message = await command["method"](data, *arguments)
+            if len(message) > 0:
+                message = "@{} {}".format(data["user_name"], message)
+                await self.chat.send_message(message)
+                
             return True
 
     # used to uniquely identify 'method' packets
