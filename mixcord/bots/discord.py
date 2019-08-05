@@ -17,18 +17,21 @@ bot = commands.Bot(command_prefix = '>')
 @bot.command()
 async def leaderboard(ctx):
     leaderboard = mixer.get_leaderboard('sparks-weekly', channel["id"])
+    message = ""
     for i in range(len(leaderboard)):
-
         leader = leaderboard[i]
         user_id = leader["userId"]
-
+        username = leader["username"]
+        sparks = leader["statValue"]
+        place = i + 1
         mixcord_user = database.user_from_mixer(user_id)
-        if mixcord_user is None:
-            continue
-
-        member = bot.get_user(mixcord_user["discord_id"])
-        await ctx.send("found user in place {}: {} ({} sparks)".format((i + 1), member.mention, leader["statValue"]))
-
+        if mixcord_user is not None:
+            member = bot.get_user(mixcord_user["discord_id"])
+            username = member.mention
+        else:
+            username = "**{}**".format(username)
+        message += "{} is in {} place w/ {} sparks\n".format(username, place, sparks)
+    await ctx.send(message)
 
 @bot.command()
 async def uptime(ctx):
