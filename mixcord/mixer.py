@@ -87,7 +87,7 @@ class MixerWS:
     def __init__(self, url, opts = None):
         self.url = url
         self.opts = opts if opts is not None else dict()
-        
+
     async def connect(self):
         self.websocket = await websockets.connect(self.url, **self.opts)
 
@@ -296,9 +296,8 @@ class MixerConstellation:
 
         while True:
 
-            # receive packets from server
+            # receive a packet from server
             packet = await self.websocket.receive_packet()
-            print(json.dumps(packet, indent = 4))
 
             # make sure it's an event we're subscribed to
             if packet["type"] != "event": continue
@@ -311,21 +310,26 @@ class MixerConstellation:
             if callback is not None:
                 await callback(packet, payload)
 
-    async def subscribe(self, event_name, callback):
+    async def subscribe(self, events, callback):
+
+        # if a single event is provided, wrap it in a list automatically
+        if isinstance(events, str):
+            events = [events]
 
         # build livesubscribe packet
         packet = {
             "type": "method",
             "method": "livesubscribe",
             "params": {
-                "events": [event_name]
+                "events": events
             },
             "id": self.packet_id
         }
 
         # send packet to server and determine callback
         await self.websocket.send_packet(packet)
-        self.callbacks[event_name] = callback
+        for event in events:
+            self.callbacks[event] = callback
 
         # increment packet id and return unique packet id
         self.packet_id += 1
