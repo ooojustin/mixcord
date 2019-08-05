@@ -29,17 +29,6 @@ if not token_data["active"]:
 channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
 
-async def followed(packet, payload):
-    message = "@{} ".format(payload["user"]["username"])
-    message += "thanks for following!" if payload["following"] else "why'd you unfollow :("
-    await bot.send_message(message)
-
-# initialize constellation (TESTING)
-async def constellation_connected(constellation):
-    event_name = "channel:{}:followed".format(channel["id"])
-    await constellation.subscribe(event_name, followed)
-constellation = MixerConstellation(constellation_connected)
-
 # import discord bot from bots.discord module
 from bots.discord import bot as discord
 
@@ -98,3 +87,29 @@ async def on_ready(username, user_id): #
 @bot
 async def user_joined(data):
     await bot.send_message("welcome to the stream, @" + data["username"])
+
+async def follow_triggered(packet, payload):
+    message = "@{} ".format(payload["user"]["username"])
+    message += "thanks for following!" if payload["following"] else "why'd you unfollow :("
+    await bot.send_message(message)
+
+async def skill_triggered(packet, payload):
+    user = mixer.get_user(payload["triggeringUserId"])
+    username = user["username"]
+    await bot.send_message("@{} just used a whopping {} {}".format(username, payload["price"], payload["currencyType"].lower()))
+
+
+# triggered when constellation websocket connection is established
+# this function should be used to subscribe to events
+async def constellation_connected(constellation):
+
+    # subscribe to follow/unfollow event
+    event_name = "channel:{}:followed".format(channel["id"])
+    await constellation.subscribe(event_name, follow_triggered)
+
+    # subscribe to skill event
+    event_name = "channel:{}:skill".format(channel["id"])
+    await constellation.subscribe(event_name, skill_triggered)
+
+# initialize constellation manager w/ connected callback
+constellation = MixerConstellation(constellation_connected)
