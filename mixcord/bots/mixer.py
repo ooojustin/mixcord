@@ -52,6 +52,14 @@ async def ping(data):
     return "pong!"
 
 @bot.commands
+async def uid(data):
+    return "your user id is: {}".format(data["user_id"])
+
+@bot.commands
+async def avatar(data):
+    return "link to your avatar: {}".format(data["user_avatar"])
+    
+@bot.commands
 async def flip(data):
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
