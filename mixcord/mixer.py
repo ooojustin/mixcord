@@ -82,6 +82,22 @@ class MixerAPI:
         delta = delta - timedelta(microseconds = delta.microseconds)
         return delta
 
+class MixerWS:
+
+    def __init__(self, url, opts = None):
+        self.url = url
+        self.opts = opts if opts is not None else dict()
+        
+    async def connect(self):
+        self.websocket = await websockets.connect(self.url, **self.opts)
+
+    async def send_packet(self, packet):
+        packet_raw = json.dumps(packet)
+        await self.websocket.send(packet_raw)
+
+    async def receive_packet(self):
+        packet_raw = await self.websocket.recv()
+        return json.loads(packet_raw)
 
 class MixerChat:
 
@@ -181,14 +197,6 @@ class MixerChat:
         # call the function
         await func(*args)
 
-    async def send_packet(self, packet):
-        packet_raw = json.dumps(packet)
-        await self.websocket.send(packet_raw)
-
-    async def receive_packet(self):
-        packet_raw = await self.websocket.recv()
-        return json.loads(packet_raw)
-
     async def send_method_packet(self, method, *args):
         packet = {
             "type": "method",
@@ -196,13 +204,13 @@ class MixerChat:
             "arguments": list(args),
             "id": self.packet_id
         }
-        await self.send_packet(packet)
+        await self.websocket.send_packet(packet)
         self.packet_id += 1
         return packet["id"]
 
     async def send_message(self, message):
         await self.send_method_packet("msg", message)
-        await self.websocket.recv()
+        await self.websocket.receive_packet()
 
     def register_method_callback(self, id, callback):
         if inspect.iscoroutinefunction(callback):
@@ -222,7 +230,8 @@ class MixerChat:
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 
         # establish websocket connection and receive welcome packet
-        self.websocket = await websockets.connect(chat_info["endpoints"][0])
+        self.websocket = MixerWS(chat_info["endpoints"][0])
+        await self.websocket.connect()
 
         # authentication callback (executed when w received reply for 'auth' method)
         async def auth_callback(data):
@@ -237,7 +246,7 @@ class MixerChat:
         while True:
 
             # receive a packet from the server
-            packet = await self.receive_packet()
+            packet = await self.websocket.receive_packet()
 
             # handle 'event' packets from server
             if packet["type"] == "event":
@@ -275,26 +284,20 @@ class MixerConstellation:
         self.callbacks = dict()
         self.packet_id = 0
 
-    async def send_packet(self, packet):
-        packet_raw = json.dumps(packet)
-        await self.websocket.send(packet_raw)
-
-    async def receive_packet(self):
-        packet_raw = await self.websocket.recv()
-        return json.loads(packet_raw)
-
     async def start(self, access_token):
 
         # connect to websocket with oauth access token
-        headers = { "Authorization": "Bearer " + access_token }
-        self.websocket = await websockets.connect(self.CONSTELLATION_URL, extra_headers = headers)
-        await self.receive_packet() # receive welcome packet
+        opts = { 'extra_headers': { "Authorization": "Bearer " + access_token } }
+        self.websocket = MixerWS(self.CONSTELLATION_URL, opts)
+        await self.websocket.connect()
+
+        await self.websocket.receive_packet() # receive welcome packet
         await self.on_connected(self) # call on_connected func (we should probably subscribe to events)
 
         while True:
 
             # receive packets from server
-            packet = await self.receive_packet()
+            packet = await self.websocket.receive_packet()
             print(json.dumps(packet, indent = 4))
 
             # make sure it's an event we're subscribed to
@@ -321,7 +324,7 @@ class MixerConstellation:
         }
 
         # send packet to server and determine callback
-        await self.send_packet(packet)
+        await self.websocket.send_packet(packet)
         self.callbacks[event_name] = callback
 
         # increment packet id and return unique packet id
