@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 class MixerAPI:
 
     API_URL = "https://mixer.com/api/v1"
+    API_URL_V2 = "https://mixer.com/api/v2"
 
     def __init__(self, client_id, client_secret):
         self.client_id = client_id
@@ -81,6 +82,12 @@ class MixerAPI:
         delta = now - started
         delta = delta - timedelta(microseconds = delta.microseconds)
         return delta
+
+    # type format: [sparks, embers]-[weekly, monthly, yearly, alltime]
+    def get_leaderboard(self, type, channel_id, limit = 10):
+        url = "{}/leaderboards/{}/channels/{}?limit={}".format(self.API_URL_V2, type, channel_id, limit)
+        response = self.session.get(url)
+        return response.json()
 
 class MixerWS:
 
