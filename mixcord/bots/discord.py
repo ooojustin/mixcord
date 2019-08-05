@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 
 from __main__ import settings, database
-import discord, logging, asyncio
+import discord, logging, asyncio, json
 from discord.ext import commands
 
 # import mixer api and mixer chatbot from bots.mixer module
@@ -13,6 +13,22 @@ from bots.mixer import channel as channel
 # initialize logging module and discord bot
 logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '>')
+
+@bot.command()
+async def leaderboard(ctx):
+    leaderboard = mixer.get_leaderboard('sparks-weekly', channel["id"])
+    for i in range(len(leaderboard)):
+
+        leader = leaderboard[i]
+        user_id = leader["userId"]
+
+        mixcord_user = database.user_from_mixer(user_id)
+        if mixcord_user is None:
+            continue
+
+        member = bot.get_user(mixcord_user["discord_id"])
+        await ctx.send("found user in place {}: {} ({} sparks)".format((i + 1), member.mention, leader["statValue"]))
+
 
 @bot.command()
 async def uptime(ctx):
