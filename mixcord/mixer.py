@@ -1,5 +1,6 @@
 import requests, json, inspect
-import asyncio, websockets, shlex
+import asyncio, websockets, shlex, dateutil.parser
+from datetime import datetime, timezone, timedelta
 
 class MixerAPI:
 
@@ -59,6 +60,28 @@ class MixerAPI:
         data = { "token": token }
         response = self.session.post(url, data)
         return response.json() # https://pastebin.com/SEd6Y2Jz
+
+    def get_broadcast(self, channel_id):
+        url = "{}/channels/{}/broadcast".format(self.API_URL, channel_id)
+        response = self.session.get(url)
+        return response.json()
+
+    def get_uptime(self, channel_id):
+
+        # get broadcast and make sure it's online
+        broadcast = self.get_broadcast(channel_id)
+        if not broadcast["online"]:
+            return None
+
+        # determine the streams start time and current time
+        started = dateutil.parser.parse(broadcast["startedAt"])
+        now = datetime.now(timezone.utc)
+
+        # calculate delta and remove microseconds because they're insignificant
+        delta = now - started
+        delta = delta - timedelta(microseconds = delta.microseconds)
+        return delta
+
 
 class MixerChat:
 
