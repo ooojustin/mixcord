@@ -21,6 +21,7 @@ async def uptime(ctx):
     uptime = mixer.get_uptime(channel["id"])
     if uptime is None:
         await ctx.send(channel["token"] + " is not currently online.")
+        return
 
     # return formatted uptime
     await ctx.send(channel["token"] + " has been live for: " + str(uptime))

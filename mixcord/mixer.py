@@ -70,7 +70,7 @@ class MixerAPI:
 
         # get broadcast and make sure it's online
         broadcast = self.get_broadcast(channel_id)
-        if not broadcast["online"]:
+        if "error" in broadcast or not broadcast["online"]:
             return None
 
         # determine the streams start time and current time
