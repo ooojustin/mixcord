@@ -5,6 +5,10 @@ from __main__ import settings
 from mixer import MixerAPI, MixerChat, MixerConstellation
 import random, utils, json
 
+from mixer.MixerAPI import MixerAPI
+from mixer.MixerChat import MixerChat
+from mixer.MixerConstellation import MixerConstellation
+
 # initialize general mixer api wrapper
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
 
