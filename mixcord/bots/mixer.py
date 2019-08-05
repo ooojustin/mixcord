@@ -10,7 +10,7 @@ mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secre
 
 # initialize chatbot with oauth tokens if needed
 if not "access_token" in settings["mixer"]:
-    import init_chatbot
+    import init_oauth
 
 # refresh the chatbot access token if needed
 token_data = mixer.check_token(settings["mixer"]["access_token"])
