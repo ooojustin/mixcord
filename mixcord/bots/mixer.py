@@ -37,6 +37,15 @@ bot = MixerChat(mixer, channel["id"])
 from bots.discord import bot as discord
 
 @bot.commands
+async def help(data):
+    await bot.send_message("ping -> returns 'pong'", data["user_name"])
+    await bot.send_message("uid -> returns your user id", data["user_name"])
+    await bot.send_message("avatar -> returns a link to your avatar", data["user_name"])
+    await bot.send_message("flip -> flips a coin, resulting in heads or tails", data["user_name"])
+    await bot.send_message("add (n1, n2) -> adds 2 numbers and returns the sum", data["user_name"])
+    return None
+
+@bot.commands
 async def uptime(data):
 
     # get uptime and check if online
@@ -58,7 +67,7 @@ async def uid(data):
 @bot.commands
 async def avatar(data):
     return "link to your avatar: {}".format(data["user_avatar"])
-    
+
 @bot.commands
 async def flip(data):
     choice = random.randint(0, 1)

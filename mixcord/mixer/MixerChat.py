@@ -51,7 +51,7 @@ class MixerChat:
 
             # try to execute the command!
             message = await command["method"](data, *arguments)
-            if len(message) > 0:
+            if message is not None:
                 message = "@{} {}".format(data["user_name"], message)
                 await self.chat.send_message(message)
 
@@ -113,8 +113,11 @@ class MixerChat:
         self.packet_id += 1
         return packet["id"]
 
-    async def send_message(self, message):
-        await self.send_method_packet("msg", message)
+    async def send_message(self, message, user = None):
+        if user is None:
+            await self.send_method_packet("msg", message)
+        else:
+            await self.send_method_packet("whisper", user, message)
         await self.websocket.receive_packet()
 
     def register_method_callback(self, id, callback):
