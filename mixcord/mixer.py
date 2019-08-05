@@ -93,13 +93,13 @@ class MixerChat:
             self.chat = chat
 
         def __call__(self, method):
-            name = method.__name__
-            sig = inspect.signature(method)
-            self.commands[name] = {
-                "method": method,
-                "signature": sig,
-                "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
-            }
+            if inspect.iscoroutinefunction(method):
+                sig = inspect.signature(method)
+                self.commands[method.__name__] = {
+                    "method": method,
+                    "signature": sig,
+                    "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
+                }
 
         async def handle(self, data):
 
@@ -264,3 +264,8 @@ class MixerChat:
                     await callback(response)
 
                 continue
+
+class MixerConstellation:
+
+    def __init__(self, access_token):
+        self.access_token = access_token

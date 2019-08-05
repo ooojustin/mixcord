@@ -44,6 +44,10 @@ async def uptime(data):
     return channel["token"] + " has been live for: " + str(uptime)
 
 @bot.commands
+async def ping(data):
+    return "pong!"
+
+@bot.commands
 async def flip(data):
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
