@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 
 from __main__ import settings
-from mixer import MixerAPI, MixerChat
+from mixer import MixerAPI, MixerChat, MixerConstellation
 import random, utils, json
 
 # initialize general mixer api wrapper
@@ -28,6 +28,9 @@ if not token_data["active"]:
 # initialize chatbot
 channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
+
+# initialize constellation (TESTING)
+constellation = MixerConstellation()
 
 # import discord bot from bots.discord module
 from bots.discord import bot as discord

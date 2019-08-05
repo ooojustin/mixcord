@@ -270,13 +270,10 @@ class MixerConstellation:
 
     CONSTELLATION_URL = "wss://constellation.mixer.com"
 
-    def __init__(self, access_token):
-
-        self.access_token = access_token
+    async def start(self, access_token):
 
         headers = { "Authorization": "Bearer " + access_token }
-        self.websocket = await websockets.connect(CONSTELLATION_URL, extra_headers = headers)
+        self.websocket = await websockets.connect(self.CONSTELLATION_URL, extra_headers = headers)
 
-    def subscribe(self, event):
-        pass
-        
+        packet = await self.websocket.recv()
+        print(json.dumps(packet, indent = 4))
