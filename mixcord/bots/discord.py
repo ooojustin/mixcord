@@ -8,10 +8,22 @@ from discord.ext import commands
 # import mixer api and mixer chatbot from bots.mixer module
 from bots.mixer import mixer as mixer
 from bots.mixer import bot as mixer_chat
+from bots.mixer import channel as channel
 
 # initialize logging module and discord bot
 logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '>')
+
+@bot.command()
+async def uptime(ctx):
+
+    # get uptime and check if online
+    uptime = mixer.get_uptime(channel["id"])
+    if uptime is None:
+        await ctx.send(channel["token"] + " is not currently online.")
+
+    # return formatted uptime
+    await ctx.send(channel["token"] + " has been live for: " + str(uptime))
 
 # triggered when the discord bot is connected + authenticated
 @bot.event
