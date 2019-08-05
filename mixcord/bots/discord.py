@@ -11,7 +11,7 @@ from bots.mixer import bot as mixer_chat
 
 # initialize logging module and discord bot
 logging.basicConfig(level = logging.ERROR)
-bot = commands.Bot(command_prefix = '!')
+bot = commands.Bot(command_prefix = '>')
 
 # triggered when the discord bot is connected + authenticated
 @bot.event

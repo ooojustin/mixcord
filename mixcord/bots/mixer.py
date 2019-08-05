@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from __main__ import settings
 from mixer import MixerAPI, MixerChat
-import random, utils
+import random, utils, json
 
 # initialize general mixer api wrapper
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
@@ -32,9 +32,16 @@ bot = MixerChat(mixer, channel["id"])
 # import discord bot from bots.discord module
 from bots.discord import bot as discord
 
-@bot
-async def handle_message(data):
-    pass
+@bot.commands
+async def uptime(data):
+
+    # get uptime and check if online
+    uptime = mixer.get_uptime(channel["id"])
+    if uptime is None:
+        return channel["token"] + " is not currently online."
+
+    # return formatted uptime
+    return channel["token"] + " has been live for: " + str(uptime)
 
 @bot.commands
 async def flip(data):
