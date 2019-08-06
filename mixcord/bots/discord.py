@@ -15,6 +15,10 @@ logging.basicConfig(level = logging.ERROR)
 bot = commands.Bot(command_prefix = '>')
 
 @bot.command()
+async def link(ctx):
+    await ctx.send("https://mixer.com/" + channel["token"])
+
+@bot.command()
 async def leaderboard(ctx):
     leaderboard = mixer.get_leaderboard('sparks-weekly', channel["id"])
     message = ""
