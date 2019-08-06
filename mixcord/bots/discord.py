@@ -99,3 +99,8 @@ async def mixcord(ctx):
 
     await ctx.author.send("Your Mixer account has been linked: " + user_data["username"])
     await mixer_chat.send_message("@{} has linked their discord account: {}".format(user_data["username"], ctx.author))
+
+async def send_announcement(message):
+    guild = bot.get_guild(settings["discord"]["guild"])
+    channel = discord.utils.get(guild.text_channels, name = "announcements")
+    await channel.send("@everyone " + message)

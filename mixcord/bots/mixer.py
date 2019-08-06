@@ -34,7 +34,7 @@ channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
 
 # import discord bot from bots.discord module
-from discord.utils import get as discord_get
+from bots.discord import send_announcement
 from bots.discord import bot as discord
 
 @bot.commands
@@ -44,12 +44,7 @@ async def announce(data, message):
     if not "Owner" in data["user_roles"]:
         return "permission denied. only owner can use 'announce' command."
 
-    # get discord guild from config + announcements channel
-    guild = discord.get_guild(settings["discord"]["guild"])
-    channel = discord_get(guild.text_channels, name = "announcements")
-
-    # send the announcement and return chat message
-    await channel.send("@everyone " + message)
+    await send_announcement(message)
     return "announcement has been sent."
 
 @bot.commands
