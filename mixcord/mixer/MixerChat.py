@@ -29,7 +29,24 @@ class MixerChat:
                     return command
 
             # return false because the command is defined but no matching parameter count
-            return False
+            return False            
+
+        def get_help(self, name, param_count = None):
+
+            command = self.get_command(name, param_count)
+
+            if command is False:
+                return "failed to find '{}' command with {} parameters.".format(name, param_count)
+            elif command is None:
+                return "failed to find '{}' command.".format(name)
+            elif command["description"] is None:
+                return "command '{}' with {} parameters is undocumented.".format(name, param_count)
+
+            if command["param_count"] > 0:
+                params = ", ".join(command["params"])
+                return "{} ({}) -> {}".format(name, params, command["description"])
+            else:
+                return "{} -> {}".format(name, command["description"])
 
         def __init__(self, chat, prefix):
             self.chat = chat
@@ -45,6 +62,7 @@ class MixerChat:
             command = {
                 "method": method,
                 "signature": sig,
+                "description": method.__doc__,
                 "params": list(params.keys())[1:], # list of parameter names
                 "param_count": len(params) - 1 # ignore data parameter (required)
             }
