@@ -34,9 +34,13 @@ class MixerChat:
                 return False
 
             # handle it as a command
-            parsed = shlex.split(message) # split string by whitespace and account for quotes
-            name = parsed[0][1:] # the name of the command -> 0th item with command prefix removed
-            arguments = parsed[1:] # remove first parsed item, because its the command name
+            try:
+                parsed = shlex.split(message) # split string by whitespace and account for quotes
+                name = parsed[0][1:] # the name of the command -> 0th item with command prefix removed
+                arguments = parsed[1:] # remove first parsed item, because its the command name
+            except:
+                await self.chat.send_message("an error occurred while parsing that command.")
+                return False
 
             # make sure the command exists
             command = self.commands.get(name, None)
