@@ -178,13 +178,6 @@ class MixerChat:
         self.packet_id += 1
         return packet["id"]
 
-    async def send_message(self, message, user = None):
-        if user is None:
-            await self.send_method_packet("msg", message)
-        else:
-            await self.send_method_packet("whisper", user, message)
-        await self.websocket.receive_packet()
-
     def register_method_callback(self, id, callback):
         if inspect.iscoroutinefunction(callback):
             if not id in self.callbacks:
@@ -249,3 +242,12 @@ class MixerChat:
                     await callback(response)
 
                 continue
+
+    async def send_message(self, message, user = None):
+        if user is None:
+            await self.send_method_packet("msg", message)
+        else:
+            await self.send_method_packet("whisper", user, message)
+
+    async def delete_message(self, id):
+        await self.send_method_packet("deleteMessage", id)
