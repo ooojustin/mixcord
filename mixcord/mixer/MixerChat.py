@@ -29,7 +29,7 @@ class MixerChat:
                     return command
 
             # return false because the command is defined but no matching parameter count
-            return False            
+            return False
 
         def get_help(self, name, param_count = None):
 
@@ -52,7 +52,7 @@ class MixerChat:
             self.chat = chat
             self.prefix = prefix
 
-        def __call__(self, method):
+        def add_command(self, name, method):
 
             if not inspect.iscoroutinefunction(method):
                 return
@@ -62,21 +62,24 @@ class MixerChat:
             command = {
                 "method": method,
                 "signature": sig,
-                "description": method.__doc__,
+                "description": method.__doc__, # command docstring (should be a brief description)
                 "params": list(params.keys())[1:], # list of parameter names
                 "param_count": len(params) - 1 # ignore data parameter (required)
             }
 
-            existing = self.get_command(method.__name__, command["param_count"])
+            existing = self.get_command(name, command["param_count"])
             if isinstance(existing, dict):
                 # this command name already exists with this parameter count
                 # it cant be overloaded unless we override the old one
                 return
 
-            if method.__name__ in self.commands:
-                self.commands[method.__name__].append(command)
+            if name in self.commands:
+                self.commands[name].append(command)
             else:
-                self.commands[method.__name__] = [command]
+                self.commands[name] = [command]
+
+        def __call__(self, method):
+            self.add_command(method.__name__, method)
 
         async def handle(self, data):
 

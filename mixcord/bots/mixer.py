@@ -54,7 +54,6 @@ async def help(data):
 
             # TODO: name = command name, desc = a description.
             # provide this information to the user in a well-formatted/readable way.
-            # print(name, "->", desc)
 
 @bot.commands
 async def help(data, name):
@@ -77,7 +76,7 @@ async def help(data, name, parameter_count_or_name):
     for command in bot.commands.commands[name]:
         if parameter_count_or_name in command["params"]:
             return bot.commands.get_help(name, command["param_count"])
-    return "no variation of command {} has parameter named {}.".format(name, parameter_count_or_name)
+    return "no variation of command '{}' has parameter named '{}'.".format(name, parameter_count_or_name)
 
 @bot.commands
 async def announce(data, message):
