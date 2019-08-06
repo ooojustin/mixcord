@@ -38,15 +38,6 @@ from discord.utils import get as discord_get
 from bots.discord import bot as discord
 
 @bot.commands
-async def help(data):
-    await bot.send_message("ping -> returns 'pong'", data["user_name"])
-    await bot.send_message("uid -> returns your user id", data["user_name"])
-    await bot.send_message("avatar -> returns a link to your avatar", data["user_name"])
-    await bot.send_message("flip -> flips a coin, resulting in heads or tails", data["user_name"])
-    await bot.send_message("add (n1, n2) -> adds 2 numbers and returns the sum", data["user_name"])
-    return "i've privately messaged you a list of commands!"
-
-@bot.commands
 async def announce(data, message):
 
     # make sure the person triggering the command is stream owner
