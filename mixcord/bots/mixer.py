@@ -84,6 +84,19 @@ async def uid(data):
     return "your user id is: {}".format(data["user_id"])
 
 @bot.commands
+async def uid(data, username):
+
+    if len(username) < 2 or username[:1] != "@":
+        return "please @ the user you'd like to find the uid of."
+
+    username = username[1:]
+    channel = mixer.get_channel(username)
+    if not "user" in channel:
+        return "failed to detect user information."
+        
+    return "@{} user id is: {}".format(username, channel["user"]["id"])
+
+@bot.commands
 async def avatar(data):
     """Provides a user with a link to their Mixer avatar."""
     return "link to your avatar: {}".format(data["user_avatar"])
