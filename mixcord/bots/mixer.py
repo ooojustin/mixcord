@@ -83,6 +83,7 @@ async def help(data):
 @bot.commands
 async def help(data, name):
     """Provides a description of a specific command."""
+    name = name.lower()
     return bot.commands.get_help(name)
 
 @bot.commands
@@ -90,6 +91,7 @@ async def help(data, name, parameter_count_or_name):
     """Provides a description of a command given a parameter count or parameter name."""
 
     # if the second parameter is numeric, assume they're specifying parameter count
+    name = name.lower()
     if utils.is_number(parameter_count_or_name):
         return bot.commands.get_help(name, int(parameter_count_or_name))
 
@@ -112,6 +114,9 @@ async def restart(data):
 
     # restart the bot
     await bot.send_message("bot restarting... wait a few seconds")
+    await asyncio.sleep(.5) # wait before restarting
+
+    # modify arguments and use execl to execute python module
     sys.argv.insert(0, '"{}"'.format(sys.executable))
     os.execl(sys.executable, *sys.argv)
 
