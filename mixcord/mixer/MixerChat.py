@@ -10,19 +10,25 @@ class MixerChat:
 
         commands = dict()
 
-        def get_command(self, name, param_count):
+        def get_command(self, name, param_count = None):
 
-            # None -> unrecognized command name
-            # False -> invalid parameter count
-
+            # make sure the command actually exists
             if not name in self.commands:
                 return None
 
+            # get a list of overloaded commands
             command_list = self.commands[name]
+
+            # if parma_count isnt specified, return the first defined func
+            if param_count is None:
+                return command_list[0]
+
+            # look for a definition with a matching parameter count
             for command in command_list:
                 if command["param_count"] == param_count:
                     return command
 
+            # return false because the command is defined but no matching parameter count
             return False
 
         def __init__(self, chat, prefix):
@@ -35,10 +41,12 @@ class MixerChat:
                 return
 
             sig = inspect.signature(method)
+            params = sig.parameters
             command = {
                 "method": method,
                 "signature": sig,
-                "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
+                "params": list(params.keys())[1:], # list of parameter names
+                "param_count": len(params) - 1 # ignore data parameter (required)
             }
 
             existing = self.get_command(method.__name__, command["param_count"])
