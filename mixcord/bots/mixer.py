@@ -41,15 +41,26 @@ from bots.discord import bot as discord
 async def help(data):
     """Displays a list of commands that can be used in the chat."""
 
-    # build a list of command descriptions
-    for name, command in bot.commands.commands.items():
+    # build a list of command names/descriptions with params
+    for name, commands in bot.commands.commands.items():
+        for command in commands:
 
-        desc = command["method"].__doc__
-        if desc is None: continue
+            desc = command["method"].__doc__
+            if desc is None: continue
 
-        # TODO: name = command name, desc = a description.
-        # provide this information to the user in a well-formatted/readable way.
-        # print(name, "->", desc)
+            # get a list of parameter names, excluding the first one
+            params = list(command["signature"].parameters.keys())[1:]
+            if len(params) > 0:
+                params = ", ".join(params)
+                msg = "{} ({}) -> {}".format(name, params, desc)
+            else:
+                msg = "{} -> {}".format(name, desc)
+
+            print(msg)
+
+            # TODO: name = command name, desc = a description.
+            # provide this information to the user in a well-formatted/readable way.
+            # print(name, "->", desc)
 
 @bot.commands
 async def announce(data, message):
@@ -85,6 +96,7 @@ async def uid(data):
 
 @bot.commands
 async def uid(data, username):
+    """Tells a user the unique user id of a tagged user on Mixer."""
 
     if len(username) < 2 or username[:1] != "@":
         return "please @ the user you'd like to find the uid of."
@@ -93,7 +105,7 @@ async def uid(data, username):
     channel = mixer.get_channel(username)
     if not "user" in channel:
         return "failed to detect user information."
-        
+
     return "@{} user id is: {}".format(username, channel["user"]["id"])
 
 @bot.commands
