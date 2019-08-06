@@ -34,6 +34,7 @@ channel = mixer.get_channel(settings["mixer"]["username"])
 bot = MixerChat(mixer, channel["id"])
 
 # import discord bot from bots.discord module
+from discord.utils import get as discord_get
 from bots.discord import bot as discord
 
 @bot.commands
@@ -44,6 +45,21 @@ async def help(data):
     await bot.send_message("flip -> flips a coin, resulting in heads or tails", data["user_name"])
     await bot.send_message("add (n1, n2) -> adds 2 numbers and returns the sum", data["user_name"])
     return "i've privately messaged you a list of commands!"
+
+@bot.commands
+async def announce(data, message):
+
+    # make sure the person triggering the command is stream owner
+    if not "Owner" in data["user_roles"]:
+        return "permission denied. only owner can use 'announce' command."
+
+    # get discord guild from config + announcements channel
+    guild = discord.get_guild(settings["discord"]["guild"])
+    channel = discord_get(guild.text_channels, name = "announcements")
+
+    # send the announcement and return chat message
+    await channel.send("@everyone " + message)
+    return "announcement has been sent."
 
 @bot.commands
 async def uptime(data):
@@ -122,7 +138,7 @@ async def skill_triggered(packet, payload):
 async def broadcast_triggered(packet, payload):
 
     if not "online" in payload: return
-    
+
     if payload["online"]:
         await bot.send_message("@{} has gone online!".format(channel["token"]))
     else:
