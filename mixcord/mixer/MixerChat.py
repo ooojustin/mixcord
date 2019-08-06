@@ -10,8 +10,9 @@ class MixerChat:
 
         commands = dict()
 
-        def __init__(self, chat):
+        def __init__(self, chat, prefix):
             self.chat = chat
+            self.prefix = prefix
 
         def __call__(self, method):
             if inspect.iscoroutinefunction(method):
@@ -29,8 +30,12 @@ class MixerChat:
             pieces = data["message"]["message"]
             for piece in pieces: message += piece["text"]
 
+            # verify that prefix is 1 character
+            if len(self.prefix) != 1:
+                raise ValueError("Prefix must be a single character.")
+
             # command prefix check
-            if message[:1] != ">":
+            if message[:1] != self.prefix:
                 return False
 
             # handle it as a command
@@ -85,10 +90,10 @@ class MixerChat:
         "DeleteSkillAttribution": "skill_cancelled"
     }
 
-    def __init__(self, api, channel_id):
+    def __init__(self, api, channel_id, command_prefix = ">"):
         self.api = api
         self.channel_id = channel_id
-        self.commands = self.ChatCommands(self)
+        self.commands = self.ChatCommands(self, command_prefix)
 
     def __call__(self, method):
         if inspect.iscoroutinefunction(method):
