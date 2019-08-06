@@ -137,18 +137,20 @@ class MixerChat:
         response = requests.get(url, headers = headers)
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 
-        # establish websocket connection and receive welcome packet
-        self.websocket = MixerWS(chat_info["endpoints"][0])
-        await self.websocket.connect()
-
         # authentication callback (executed when w received reply for 'auth' method)
         async def auth_callback(data):
             if data["authenticated"]:
                 await self.call_func("on_ready", self.username, self.user_id)
 
-        # send auth packet and register callback
-        auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
-        self.register_method_callback(auth_packet_id, auth_callback)
+        # send auth packet upon connection and register auth_callback
+        async def connected_callback():
+            auth_packet_id = await self.send_method_packet("auth", self.channel_id, self.user_id, chat_info["authkey"])
+            self.register_method_callback(auth_packet_id, auth_callback)
+
+        # establish websocket connection and receive welcome packet
+        self.websocket = MixerWS(chat_info["endpoints"][0])
+        self.websocket.on_connected = connected_callback
+        await self.websocket.connect()
 
         # infinite loop to handle future packets from server
         while True:
