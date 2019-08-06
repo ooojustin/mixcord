@@ -38,6 +38,20 @@ from bots.discord import send_announcement
 from bots.discord import bot as discord
 
 @bot.commands
+async def help(data):
+    """Displays a list of commands that can be used in the chat."""
+
+    # build a list of command descriptions
+    for name, command in bot.commands.commands.items():
+
+        desc = command["method"].__doc__
+        if desc is None: continue
+
+        # TODO: name = command name, desc = a description.
+        # provide this information to the user in a well-formatted/readable way.
+        # print(name, "->", desc)
+
+@bot.commands
 async def announce(data, message):
 
     # make sure the person triggering the command is stream owner
@@ -49,6 +63,7 @@ async def announce(data, message):
 
 @bot.commands
 async def uptime(data):
+    """Displays how long the streamer has been live for."""
 
     # get uptime and check if online
     uptime = mixer.get_uptime(channel["id"])
@@ -60,24 +75,29 @@ async def uptime(data):
 
 @bot.commands
 async def ping(data):
+    """Returns 'pong!'"""
     return "pong!"
 
 @bot.commands
 async def uid(data):
+    """Tells a user their unique user id on Mixer."""
     return "your user id is: {}".format(data["user_id"])
 
 @bot.commands
 async def avatar(data):
+    """Provides a user with a link to their Mixer avatar."""
     return "link to your avatar: {}".format(data["user_avatar"])
 
 @bot.commands
 async def flip(data):
+    """Flips a coin to determine if it'll land on heads or tails."""
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
     return "flipped a coin and picked: " + desc
 
 @bot.commands
 async def add(data, n1, n2):
+    """Adds 2 numbers together and outputs the sum."""
 
     # make sure both inputs are numeric before trying to use them as floats
     if not utils.is_number(n1) or not utils.is_number(n2):
