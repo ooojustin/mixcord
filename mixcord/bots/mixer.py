@@ -43,7 +43,7 @@ async def help(data):
     await bot.send_message("avatar -> returns a link to your avatar", data["user_name"])
     await bot.send_message("flip -> flips a coin, resulting in heads or tails", data["user_name"])
     await bot.send_message("add (n1, n2) -> adds 2 numbers and returns the sum", data["user_name"])
-    return None
+    return "i've privately messaged you a list of commands!"
 
 @bot.commands
 async def uptime(data):
@@ -119,6 +119,14 @@ async def skill_triggered(packet, payload):
     username = user["username"]
     await bot.send_message("@{} just used a whopping {} {}".format(username, payload["price"], payload["currencyType"].lower()))
 
+async def broadcast_triggered(packet, payload):
+
+    if not "online" in payload: return
+    
+    if payload["online"]:
+        await bot.send_message("@{} has gone online!".format(channel["token"]))
+    else:
+        await bot.send_message("@{} has gone offline :(".format(channel["token"]))
 
 # triggered when constellation websocket connection is established
 # this function should be used to subscribe to events
@@ -131,6 +139,10 @@ async def constellation_connected(constellation):
     # subscribe to skill event
     event_name = "channel:{}:skill".format(channel["id"])
     await constellation.subscribe(event_name, skill_triggered)
+
+    # subscribe to chanenl update event
+    event_name = "channel:{}:broadcast".format(channel["id"])
+    await constellation.subscribe(event_name, broadcast_triggered)
 
 # initialize constellation manager w/ connected callback
 constellation = MixerConstellation(constellation_connected)
