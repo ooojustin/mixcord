@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from __main__ import settings
 from mixer import MixerAPI, MixerChat, MixerConstellation
-import random, utils, json
+import random, utils, json, asyncio, os
 
 from mixer.MixerAPI import MixerAPI
 from mixer.MixerChat import MixerChat
@@ -28,6 +28,7 @@ if not token_data["active"]:
     # store updated tokens in settings file
     settings_cfg = json.dumps(settings, indent = 4)
     utils.write_all_text("settings.cfg", settings_cfg)
+    print("access_token and refresh_token have been updated automatically.")
 
 # initialize chatbot
 channel = mixer.get_channel(settings["mixer"]["username"])
@@ -76,6 +77,7 @@ async def help(data):
 
     # whisper formatted response messages to used
     await bot.send_message(message1, data["user_name"])
+    await asyncio.sleep(.5) # wait before sending second message :p
     await bot.send_message(message2, data["user_name"])
 
 @bot.commands
@@ -100,6 +102,18 @@ async def help(data, name, parameter_count_or_name):
         if parameter_count_or_name in command["params"]:
             return bot.commands.get_help(name, command["param_count"])
     return "no variation of command '{}' has parameter named '{}'.".format(name, parameter_count_or_name)
+
+@bot.commands
+async def restart(data):
+
+    # make sure the person triggering the command is stream owner
+    if not "Owner" in data["user_roles"]:
+        return "permission denied. only owner can use 'announce' command."
+
+    # restart the bot
+    await bot.send_message("bot restarting... wait a few seconds")
+    sys.argv.insert(0, '"{}"'.format(sys.executable))
+    os.execl(sys.executable, *sys.argv)
 
 @bot.commands
 async def announce(data, message):
