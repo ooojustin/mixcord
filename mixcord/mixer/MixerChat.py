@@ -10,18 +10,47 @@ class MixerChat:
 
         commands = dict()
 
+        def get_command(self, name, param_count):
+
+            # None -> unrecognized command name
+            # False -> invalid parameter count
+
+            if not name in self.commands:
+                return None
+
+            command_list = self.commands[name]
+            for command in command_list:
+                if command["param_count"] == param_count:
+                    return command
+
+            return False
+
         def __init__(self, chat, prefix):
             self.chat = chat
             self.prefix = prefix
 
         def __call__(self, method):
-            if inspect.iscoroutinefunction(method):
-                sig = inspect.signature(method)
-                self.commands[method.__name__] = {
-                    "method": method,
-                    "signature": sig,
-                    "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
-                }
+
+            if not inspect.iscoroutinefunction(method):
+                return
+
+            sig = inspect.signature(method)
+            command = {
+                "method": method,
+                "signature": sig,
+                "param_count": len(sig.parameters) - 1 # ignore data parameter (required)
+            }
+
+            existing = self.get_command(method.__name__, command["param_count"])
+            if isinstance(existing, dict):
+                # this command name already exists with this parameter count
+                # it cant be overloaded unless we override the old one
+                return
+
+            if method.__name__ in self.commands:
+                self.commands[method.__name__].append(command)
+            else:
+                self.commands[method.__name__] = [command]
 
         async def handle(self, data):
 
@@ -48,13 +77,11 @@ class MixerChat:
                 return False
 
             # make sure the command exists
-            command = self.commands.get(name, None)
+            command = self.get_command(name, len(arguments))
             if command is None:
                 await self.chat.send_message("unrecognized command '{}'.".format(name))
                 return False
-
-            # make sure we've been supplied the correct number of arguments
-            if len(arguments) != command["param_count"]:
+            elif command is False:
                 await self.chat.send_message("invalid parameter count for command '{}'.".format(name))
                 return False
 
