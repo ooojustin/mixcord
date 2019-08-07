@@ -20,7 +20,9 @@ class MixerAPI:
         url = "{}/channels/{}".format(self.API_URL, id_or_token)
         response = self.session.get(url)
         if response.status_code == 200:
-            return MixerChannel(response.json())
+            channel = MixerChannel(response.json())
+            channel.api = self
+            return channel
         elif response.status_code == 404:
             raise MixerExceptions.NotFound("Channel not found: API returned 404.")
         else:
@@ -31,7 +33,9 @@ class MixerAPI:
         url = "{}/users/{}".format(self.API_URL, user_id)
         response = self.session.get(url)
         if response.status_code == 200:
-            return MixerUser(response.json())
+            user = MixerUser(response.json())
+            user.api = self
+            return channel
         elif response.status_code == 404:
             raise MixerExceptions.NotFound("User not found: API returned 404.")
         else:

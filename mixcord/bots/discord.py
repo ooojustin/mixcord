@@ -19,7 +19,7 @@ async def link(ctx):
 
 @bot.command()
 async def leaderboard(ctx):
-    leaderboard = api.get_leaderboard('sparks-weekly', channel.id)
+    leaderboard = channel.get_leaderboard('sparks-weekly')
     message = ""
     for i in range(len(leaderboard)):
         leader = leaderboard[i]
@@ -40,7 +40,7 @@ async def leaderboard(ctx):
 async def uptime(ctx):
 
     # get uptime and check if online
-    uptime = api.get_uptime(channel.id)
+    uptime = channel.get_uptime()
     if uptime is None:
         await ctx.send(channel.token + " is not currently online.")
         return

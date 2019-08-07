@@ -140,7 +140,7 @@ async def uptime(data):
     """Displays how long the streamer has been live for."""
 
     # get uptime and check if online
-    uptime = api.get_uptime(channel.id)
+    uptime = channel.get_uptime()
     if uptime is None:
         return channel.token + " is not currently online."
 
