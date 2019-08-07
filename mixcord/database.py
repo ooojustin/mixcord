@@ -1,16 +1,16 @@
 import sqlite3
 from enum import Enum
 
-class IDType(Enum):
-    USER = 1
-    CHANNEL = 2
-    DISCORD = 3
-
 # database initialization
 db = sqlite3.connect('mixcord.db')
 db.row_factory = sqlite3.Row # fetched rows will have values mapped to column names
 db.isolation_level = None # automatically commit changes to db
 cursor = db.cursor()
+
+class IDType(Enum):
+    USER = 1
+    CHANNEL = 2
+    DISCORD = 3
 
 def column_from_type(id_type):
     columns = {
@@ -25,9 +25,10 @@ def insert_user(user_id, channel_id, discord_id):
     params = (user_id, channel_id, discord_id)
     cursor.execute(query, params)
 
-def update_tokens(discord_id, access_token, refresh_token, expires):
-    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE discord_id = ?"
-    params = (access_token, refresh_token, expires, discord_id)
+def update_tokens(id, access_token, refresh_token, expires, id_type = 1):
+    column = column_from_type(id_type)
+    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE ? = ?"
+    params = (access_token, refresh_token, expires, column, id)
     cursor.execute(query, params)
 
 def get_user(id, id_type = 1):
@@ -35,13 +36,13 @@ def get_user(id, id_type = 1):
     cursor.execute("SELECT * FROM mixcord WHERE ? = ?", (column, id))
     return cursor.fetchone()
 
-def table_exists(name):
-    query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
-    params = (name,)
-    cursor.execute(query, params)
-    return cursor.fetchone() is not None
-
 def init():
+
+    def table_exists(name):
+        query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
+        params = (name,)
+        cursor.execute(query, params)
+        return cursor.fetchone() is not None
 
     # create the mixcord table, if it doesnt exist
     if not table_exists("mixcord"):
