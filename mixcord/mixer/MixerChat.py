@@ -1,6 +1,7 @@
 import inspect
 import requests
 import shlex
+import asyncio
 
 from .MixerWS import MixerWS
 
@@ -49,8 +50,14 @@ class MixerChat:
                 return "{} -> {}".format(name, command["description"])
 
         def __init__(self, chat, prefix):
+
             self.chat = chat
             self.prefix = prefix
+
+            # initialize default commands
+            for name, methods in DEFAULT_COMMANDS.items():
+                for method in methods:
+                    self.add_command(name, method)
 
         def add_command(self, name, method):
 
@@ -116,6 +123,7 @@ class MixerChat:
                 return False
 
             # try to execute the command!
+            data["chat"] = self.chat
             message = await command["method"](data, *arguments)
             if message is not None:
                 message = "@{} {}".format(data["user_name"], message)
@@ -252,3 +260,75 @@ class MixerChat:
 
     async def delete_message(self, id):
         await self.send_method_packet("deleteMessage", id)
+
+async def help_0(data):
+    """Displays a list of commands that can be used in the chat."""
+
+    chat = data["chat"]
+    command_count = 0
+    command_names = list()
+
+    # build a list of command names/descriptions with params
+    for name, commands in chat.commands.commands.items():
+
+        variants = list()
+
+        for command in commands:
+
+            if command["description"] is None:
+                continue
+
+            command_count += 1
+            variants.append(str(command["param_count"]))
+
+        if len(variants) == 0:
+            continue
+        elif len(variants) == 1:
+            command_names.append(name)
+        else:
+            param_counts = ", ".join(variants)
+            command_names.append("{} ({})".format(name, param_counts))
+
+    # delete original >help message
+    await chat.delete_message(data["id"])
+
+    # formate response messages
+    message1 = "There are a total of {} commands: {}."
+    message2 = "To see information about a specific command, use '{}help command_name'."
+    message1 = message1.format(command_count, ", ".join(command_names))
+    message2 = message2.format(chat.commands.prefix)
+
+    # whisper formatted response messages to used
+    await chat.send_message(message1, data["user_name"])
+    await asyncio.sleep(.5) # wait before sending second message :p
+    await chat.send_message(message2, data["user_name"])
+
+async def help_1(data, name):
+    """Provides a description of a specific command."""
+    chat = data["chat"]
+    name = name.lower()
+    return chat.commands.get_help(name)
+
+async def help_2(data, name, parameter_count_or_name):
+    """Provides a description of a command given a parameter count or parameter name."""
+    chat = data["chat"]
+
+    # if the second parameter is an int, assume they're specifying parameter count
+    name = name.lower()
+    try:
+        return chat.commands.get_help(name, int(parameter_count_or_name))
+    except ValueError: pass
+
+    # fallback to get_help command if it doesnt exist
+    if not name in chat.commands.commands:
+        return chat.commands.get_help(name)
+
+    # try to find a definition of the specified command with the given parameter name
+    for command in chat.commands.commands[name]:
+        if parameter_count_or_name in command["params"]:
+            return chat.commands.get_help(name, command["param_count"])
+    return "no variation of command '{}' has parameter named '{}'.".format(name, parameter_count_or_name)
+
+DEFAULT_COMMANDS = {
+    "help": [help_0, help_1, help_2]
+}
