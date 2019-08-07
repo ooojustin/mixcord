@@ -136,8 +136,8 @@ class MixerChat:
 
     # map events to functions
     event_map = {
+        # ChatMessage -> handle_message
         "WelcomeEvent": "welcomed",
-        "ChatMessage": "handle_message",
         "UserJoin": "user_joined",
         "UserLeave": "user_left",
         "PollStart": "poll_started",
@@ -229,14 +229,16 @@ class MixerChat:
 
             # handle 'event' packets from server
             if packet["type"] == "event":
+
+                # custom handling for chat messages (commands and stuff)
+                if packet["event"] == "ChatMessage":
+                    message = MixerChatMessage(packet["data"])
+                    message.handled = await self.commands.handle(message)
+                    await self.call_func("handle_message", message)
+                    continue
+
+                # call corresponding event handler
                 if packet["event"] in self.event_map:
-
-                    # custom handling for chat messages (commands?)
-                    if packet["event"] == "ChatMessage":
-                        message = MixerChatMessage(packet["data"])
-                        await self.commands.handle(message)
-
-                    # call corresponding event handler
                     func_name = self.event_map[packet["event"]]
                     await self.call_func(func_name, packet["data"])
 

@@ -18,6 +18,7 @@ def column_from_type(id_type):
         IDType.CHANNEL: "channel_id",
         IDType.DISCORD: "discord_id"
     }
+    id_type = IDType(id_type)
     return columns.get(id_type)
 
 def insert_user(user_id, channel_id, discord_id):
@@ -31,9 +32,18 @@ def update_tokens(id, access_token, refresh_token, expires, id_type = 1):
     params = (access_token, refresh_token, expires, column, id)
     cursor.execute(query, params)
 
+def add_balance(id, amount, id_type = 1):
+    column = column_from_type(id_type)
+    operation = "+" if amount >= 0 else "-"
+    query = "UPDATE mixcord SET balance = balance {} ? WHERE {} = ?".format(operation, column)
+    print(query, column)
+    params = (amount, id)
+    cursor.execute(query, params)
+
 def get_user(id, id_type = 1):
     column = column_from_type(id_type)
-    cursor.execute("SELECT * FROM mixcord WHERE ? = ?", (column, id))
+    query = "SELECT * FROM mixcord WHERE {} = ?".format(column)
+    cursor.execute(query, (id,))
     return cursor.fetchone()
 
 def init():

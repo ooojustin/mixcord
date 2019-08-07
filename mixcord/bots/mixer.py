@@ -229,13 +229,13 @@ async def lunch(message):
 
     return "starting poll for lunch... cast your vote!"
 
-# trigerred when the mixer bot is connected + authenticated
+# triggered when the mixer bot is connected + authenticated
 @chat
 async def on_ready(username, user_id): #
     print("mixer logged in: {} (uid = {})".format(username, user_id))
     await chat.send_message("mixcord logged in successfully!")
 
-# trigerred when a user joins the stream
+# triggered when a user joins the stream
 @chat
 async def user_joined(data):
     await chat.send_message("welcome to the stream, @" + data["username"])
