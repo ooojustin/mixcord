@@ -7,7 +7,9 @@ from time import time
 
 from __main__ import database
 from __main__ import settings as settings_all
+
 settings = settings_all["mixer"]
+currency_name = settings_all["mixcord"]["currency_name"]
 
 from mixer.MixerAPI import MixerAPI
 from mixer.MixerChat import MixerChat
@@ -151,15 +153,15 @@ async def bet(message, amount):
 
     # make sure they have sufficient balance
     if mixcord_user["balance"] < amount:
-        return "you have insufficient balance. ({}/{} {})".format(mixcord_user["balance"], amount, settings_all["mixcord"]["currency_name"])
+        return "you have insufficient balance. ({}/{} {})".format(mixcord_user["balance"], amount, currency_name)
 
     won = random.randint(0, 1) == 1
     if won:
         database.add_balance(message.user_id, amount)
-        return "you won :D you now have {} {}.".format((mixcord_user["balance"] + amount), settings_all["mixcord"]["currency_name"])
+        return "you won :D you now have {} {}.".format((mixcord_user["balance"] + amount), currency_name)
     else:
         database.add_balance(message.user_id, -amount)
-        return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), settings_all["mixcord"]["currency_name"])
+        return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), currency_name)
 
 @chat.commands
 async def bet(message, username, amount):
@@ -215,14 +217,14 @@ async def bet(message, username, amount):
             database.add_balance(loser_id, -bet["amount"])
 
             # end the bet!
-            await chat.send_message("@{} has won {} {}! better luck next time, @{}.".format(winner_username, bet["amount"], settings_all["mixcord"]["currency_name"], loser_username))
+            await chat.send_message("@{} has won {} {}! better luck next time, @{}.".format(winner_username, bet["amount"], currency_name, loser_username))
             return None
 
     # if the amount isnt being written as "accept" or "deny", we're trying to start a new bet
     # make sure the amount is numeric by converting it to an int
     try: amount = int(amount)
     except:
-        return "please enter a numeric amount of {}".format(settings_all["mixcord"]["currency_name"])
+        return "please enter a numeric amount of {}".format(currency_name)
 
     # make sure we don't already have a pending bet
     if pending_bets.get(message.user_name) is not None:
@@ -239,7 +241,7 @@ async def bet(message, username, amount):
     }
 
     # send messages indicating the challenge has been issued
-    await chat.send_message("@{} has challenged @{} to a bet of {} {}!".format(message.user_name, username, amount, settings_all["mixcord"]["currency_name"]))
+    await chat.send_message("@{} has challenged @{} to a bet of {} {}!".format(message.user_name, username, amount, currency_name))
     await asyncio.sleep(0.5)
     await chat.send_message("use {}bet @{} [accept/deny] to respond to your pending bet!".format(chat.commands.prefix, message.user_name), username)
 
@@ -334,7 +336,7 @@ async def balance(message):
     mixcord_user = database.get_user(message.user_id)
     if mixcord_user is None:
         return "your mixer account must be linked to your discord via mixcord before tracking balance."
-    return "you have {} {}".format(mixcord_user["balance"], settings_all["mixcord"]["currency_name"])
+    return "you have {} {}".format(mixcord_user["balance"], currency_name)
 
 @chat.commands
 async def balance(message, username):
@@ -349,7 +351,7 @@ async def balance(message, username):
     mixcord_user = database.get_user(user.id)
     balance = None if mixcord_user is None else mixcord_user["balance"]
 
-    return "@{} has {} {}".format(username, balance, settings_all["mixcord"]["currency_name"])
+    return "@{} has {} {}".format(username, balance, currency_name)
 
 @chat.commands
 async def lunch(message):
