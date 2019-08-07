@@ -3,6 +3,7 @@ sys.path.append("..")
 
 import random, utils, json, asyncio, os, requests
 from __main__ import settings as settings_all
+from __main__ import database
 settings = settings_all["mixer"]
 
 from mixer.MixerAPI import MixerAPI
@@ -208,6 +209,14 @@ async def btc_list(message):
     return "supported currencies: " + currencies
 
 @chat.commands
+async def balance(message):
+    """Outputs a users balance."""
+    mixcord_user = database.get_user(message.user_id)
+    if mixcord_user is None:
+        return "your mixer account must be linked to your discord via mixcord before tracking balance."
+    return "you have {} {}".format(mixcord_user["balance"], settings_all["mixcord"]["currency_name"])
+
+@chat.commands
 async def lunch(message):
 
     if not message.has_role("Owner"):
@@ -229,7 +238,7 @@ async def on_ready(username, user_id): #
 # trigerred when a user joins the stream
 @chat
 async def user_joined(data):
-    await chat.send_message("welcome to the stream, @" + data["username"], data["username"])
+    await chat.send_message("welcome to the stream, @" + data["username"])
 
 async def follow_triggered(packet, payload):
     message = "@{} ".format(payload["user"]["username"])

@@ -27,7 +27,7 @@ async def leaderboard(ctx):
         username = leader["username"]
         sparks = leader["statValue"]
         place = i + 1
-        mixcord_user = database.user_from_mixer(user_id)
+        mixcord_user = database.get_user(user_id)
         if mixcord_user is not None:
             member = bot.get_user(mixcord_user["discord_id"])
             username = member.mention
@@ -59,7 +59,7 @@ async def mixcord(ctx):
 
     # make sure discord id isn't already in database
     discord_id = ctx.author.id
-    if database.user_from_discord(discord_id) is not None:
+    if database.get_user(discord_id, database.IDType.DISCORD) is not None:
         await ctx.author.send("You've already linked your Mixer account via mixcord.")
         return
 
