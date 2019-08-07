@@ -103,11 +103,23 @@ async def help(data, name, parameter_count_or_name):
     return "no variation of command '{}' has parameter named '{}'.".format(name, parameter_count_or_name)
 
 @bot.commands
+async def shutdown(data):
+
+    # make sure the person triggering the command is stream owner
+    if not "Owner" in data["user_roles"]:
+        return "permission denied. only owner can use 'shutdown' command."
+
+    # shutdown the bot
+    await bot.send_message("bot shutting down...")
+    await asyncio.sleep(.5) # wait before exiting
+    sys.exit(0)
+
+@bot.commands
 async def restart(data):
 
     # make sure the person triggering the command is stream owner
     if not "Owner" in data["user_roles"]:
-        return "permission denied. only owner can use 'announce' command."
+        return "permission denied. only owner can use 'restart' command."
 
     # restart the bot
     await bot.send_message("bot restarting... wait a few seconds")
