@@ -9,6 +9,7 @@ from mixer.MixerAPI import MixerAPI
 from mixer.MixerChat import MixerChat
 from mixer.MixerConstellation import MixerConstellation
 from mixer.MixerOAuth import MixerOAuth
+import mixer.MixerExceptions as MixerExceptions
 
 # initialize chatbot with oauth tokens if needed
 if not "access_token" in settings:
@@ -20,7 +21,7 @@ auth = MixerOAuth(settings["access_token"], settings["refresh_token"])
 
 # initialize chatbot
 channel = api.get_channel(settings["username"])
-chat = MixerChat(api, channel["id"])
+chat = MixerChat(api, channel.id)
 
 # import discord bot from bots.discord module
 from bots.discord import send_announcement
@@ -135,12 +136,12 @@ async def uptime(data):
     """Displays how long the streamer has been live for."""
 
     # get uptime and check if online
-    uptime = api.get_uptime(channel["id"])
+    uptime = api.get_uptime(channel.id)
     if uptime is None:
-        return channel["token"] + " is not currently online."
+        return channel.token + " is not currently online."
 
     # return formatted uptime
-    return channel["token"] + " has been live for: " + str(uptime)
+    return channel.token + " has been live for: " + str(uptime)
 
 @chat.commands
 async def ping(data):
@@ -160,11 +161,12 @@ async def uid(data, username):
         return "please @ the user you'd like to find the uid of."
 
     username = username[1:]
-    channel = api.get_channel(username)
-    if not "user" in channel:
+    try:
+        channel = api.get_channel(username)
+    except MixerExceptions.NotFoundException:
         return "failed to detect user information."
 
-    return "@{} user id is: {}".format(username, channel["user"]["id"])
+    return "@{} user id is: {}".format(username, channel.user.id)
 
 @chat.commands
 async def avatar(data):
@@ -245,25 +247,25 @@ async def broadcast_triggered(packet, payload):
     if not "online" in payload: return
 
     if payload["online"]:
-        await send_announcement("{} is now online: https://mixer.com/{}".format(channel["token"], channel["token"]))
-        await chat.send_message("@{} has gone online!".format(channel["token"]))
+        await send_announcement("{} is now online: https://mixer.com/{}".format(channel.token, channel.token))
+        await chat.send_message("@{} has gone online!".format(channel.token))
     else:
-        await chat.send_message("@{} has gone offline :(".format(channel["token"]))
+        await chat.send_message("@{} has gone offline :(".format(channel.token))
 
 # triggered when constellation websocket connection is established
 # this function should be used to subscribe to events
 async def constellation_connected(constellation):
 
     # subscribe to follow/unfollow event
-    event_name = "channel:{}:followed".format(channel["id"])
+    event_name = "channel:{}:followed".format(channel.id)
     await constellation.subscribe(event_name, follow_triggered)
 
     # subscribe to skill event
-    event_name = "channel:{}:skill".format(channel["id"])
+    event_name = "channel:{}:skill".format(channel.id)
     await constellation.subscribe(event_name, skill_triggered)
 
     # subscribe to chanenl update event
-    event_name = "channel:{}:broadcast".format(channel["id"])
+    event_name = "channel:{}:broadcast".format(channel.id)
     await constellation.subscribe(event_name, broadcast_triggered)
 
 # initialize constellation manager w/ connected callback

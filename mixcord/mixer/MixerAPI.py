@@ -2,6 +2,9 @@ import requests
 import dateutil.parser
 from datetime import datetime, timezone, timedelta
 
+from . import MixerExceptions
+from .MixerObjects import MixerUser, MixerChannel
+
 class MixerAPI:
 
     API_URL = "https://mixer.com/api/v1"
@@ -16,12 +19,22 @@ class MixerAPI:
     def get_channel(self, id_or_token):
         url = "{}/channels/{}".format(self.API_URL, id_or_token)
         response = self.session.get(url)
-        return response.json()
+        if response.status_code == 200:
+            return MixerChannel(response.json())
+        elif response.status_code == 404:
+            raise MixerExceptions.NotFoundException("Channel not found: API returned 404.")
+        else:
+            raise RuntimeError("API returned unhandled status code: " + response.status_code)
 
     def get_user(self, user_id):
         url = "{}/users/{}".format(self.API_URL, user_id)
         response = self.session.get(url)
-        return response.json() # https://pastebin.com/paR8PfSn
+        if response.status_code == 200:
+            return MixerUser(response.json())
+        elif response.status_code == 404:
+            raise MixerExceptions.NotFoundException("User not found: API returned 404.")
+        else:
+            raise RuntimeError("API returned unhandled status code: " + response.status_code)
 
     def get_shortcode(self, scope = None):
         url = "{}/oauth/shortcode".format(self.API_URL)
