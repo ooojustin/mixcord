@@ -28,15 +28,13 @@ def insert_user(user_id, channel_id, discord_id):
 
 def update_tokens(id, access_token, refresh_token, expires, id_type = 1):
     column = column_from_type(id_type)
-    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE ? = ?"
-    params = (access_token, refresh_token, expires, column, id)
+    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE {} = ?".format(column)
+    params = (access_token, refresh_token, expires, id)
     cursor.execute(query, params)
 
 def add_balance(id, amount, id_type = 1):
     column = column_from_type(id_type)
-    operation = "+" if amount >= 0 else "-"
-    query = "UPDATE mixcord SET balance = balance {} ? WHERE {} = ?".format(operation, column)
-    print(query, column)
+    query = "UPDATE mixcord SET balance = balance + ? WHERE {} = ?".format(column)
     params = (amount, id)
     cursor.execute(query, params)
 
