@@ -138,6 +138,29 @@ async def flip(message):
     return "flipped a coin and picked: " + desc
 
 @chat.commands
+async def bet(message, amount):
+    """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
+    try: amount = int(amount)
+    except: return "invalid 'amount' provided."
+
+    # make sure their discord account is linked
+    mixcord_user = database.get_user(message.user_id)
+    if mixcord_user is None:
+        return "your mixer account must be linked to your discord via mixcord to use this command."
+
+    # make sure they have sufficient balance
+    if mixcord_user["balance"] < amount:
+        return "you have insufficient balance. ({}/{} {})".format(mixcord_user["balance"], amount, settings_all["mixcord"]["currency_name"])
+
+    won = random.randint(0, 1) == 1
+    if won:
+        database.add_balance(message.user_id, amount)
+        return "you won :D you now have {} {}.".format((mixcord_user["balance"] + amount), settings_all["mixcord"]["currency_name"])
+    else:
+        database.add_balance(message.user_id, -amount)
+        return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), settings_all["mixcord"]["currency_name"])
+
+@chat.commands
 async def add(message, number1, number2):
     """Adds number1 and number2 together and outputs the sum."""
     try:
