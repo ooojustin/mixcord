@@ -15,6 +15,6 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(asyncio.gather(
     bots.discord.bot.start(settings["discord"]["token"]),
     bots.mixer.auth.start(bots.mixer.mixer),
-    bots.mixer.bot.start(settings["mixer"]["access_token"]),
-    bots.mixer.constellation.start(settings["mixer"]["access_token"]))
+    bots.mixer.bot.start(bots.mixer.auth),
+    bots.mixer.constellation.start(bots.mixer.auth))
 )

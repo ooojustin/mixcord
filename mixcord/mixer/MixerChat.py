@@ -184,15 +184,15 @@ class MixerChat:
             if not id in self.callbacks:
                 self.callbacks[id] = callback
 
-    async def start(self, access_token):
+    async def start(self, oauth):
 
         # get the bots username and user id
-        token_data = self.api.check_token(access_token)
+        token_data = self.api.check_token(oauth.access_token)
         self.user_id = token_data["sub"]
         self.username = token_data["username"]
 
         url = "{}/chats/{}".format(self.api.API_URL, self.channel_id)
-        headers = { "Authorization": "Bearer " + access_token }
+        headers = { "Authorization": "Bearer " + oauth.access_token }
         response = requests.get(url, headers = headers)
         chat_info = response.json() # https://pastebin.com/Z3RyUgBh
 

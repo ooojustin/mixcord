@@ -1,4 +1,4 @@
-import json, asyncio
+import json, asyncio, inspect
 from time import time
 
 class MixerOAuth:
@@ -11,26 +11,29 @@ class MixerOAuth:
         self.access_token = access_token
         self.refresh_token = refresh_token
 
-    def refresh(self):
-        tokens = self.mixer.get_token(self.refresh_token, refresh = True)
+    async def refresh(self):
+        tokens = self.api.get_token(self.refresh_token, refresh = True)
         self.access_token = tokens["access_token"]
         self.refresh_token = tokens["refresh_token"]
-        for event in refreshed_events:
-            event(self.access_token, self.refresh_token)
+        for event in self.refreshed_events:
+            if inspect.iscoroutinefunction(event):
+                await event(self.access_token, self.refresh_token)
+            elif inspect.isfunction(event):
+                event(self.access_token, self.refresh_token)
 
-    async def start(self, mixer):
+    async def start(self, api):
 
-        self.mixer = mixer
+        self.api = api
 
         while True:
 
-            token_data = mixer.check_token(self.access_token) # https://pastebin.com/diWKPbqg
+            token_data = api.check_token(self.access_token) # https://pastebin.com/diWKPbqg
 
             if not token_data["active"]:
-                self.refresh()
+                await self.refresh()
                 continue
 
             expires_in = int(token_data["exp"] - time() - 10)
             print("waiting {} seconds before refreshing access_token".format(expires_in))
             await asyncio.sleep(expires_in)
-            self.refresh()
+            await self.refresh()

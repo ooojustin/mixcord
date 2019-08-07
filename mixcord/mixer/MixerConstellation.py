@@ -3,26 +3,38 @@ from .MixerWS import MixerWS
 class MixerConstellation:
 
     CONSTELLATION_URL = "wss://constellation.mixer.com"
+    websocket = None
 
     def __init__(self, on_connected):
         self.on_connected = on_connected
         self.callbacks = dict()
         self.packet_id = 0
 
-    async def start(self, access_token):
-
-        # connect to websocket with oauth access token
-        opts = { 'extra_headers': { "Authorization": "Bearer " + access_token } }
+    async def connect(self, *args):
+        opts = { "extra_headers": { "Authorization": "Bearer " + self.oauth.access_token } }
+        self.reconnected = self.websocket is not None
         self.websocket = MixerWS(self.CONSTELLATION_URL, opts)
         await self.websocket.connect()
-
-        await self.websocket.receive_packet() # receive welcome packet
         await self.on_connected(self) # call on_connected func (we should probably subscribe to events)
+
+    async def start(self, oauth):
+
+        self.oauth = oauth
+        self.oauth.refreshed_events.append(self.connect)
+        await self.connect()
 
         while True:
 
             # receive a packet from server
-            packet = await self.websocket.receive_packet()
+            try:
+                packet = await self.websocket.receive_packet()
+            except: pass
+
+            # ignore the first packet if we just reconnected
+            # this is because we were still awaiting a recv() call in the old websocket object
+            if self.reconnected:
+                self.reconnected = False
+                continue
 
             # make sure it's an event we're subscribed to
             if packet["type"] != "event": continue

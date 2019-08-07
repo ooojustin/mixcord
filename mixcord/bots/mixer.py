@@ -225,9 +225,10 @@ async def on_ready(username, user_id): #
 # trigerred when a user joins the stream
 @bot
 async def user_joined(data):
-    await bot.send_message("welcome to the stream, @" + data["username"])
+    await bot.send_message("welcome to the stream, @" + data["username"], data["username"])
 
 async def follow_triggered(packet, payload):
+    print(json.dumps(packet, indent = 4))
     message = "@{} ".format(payload["user"]["username"])
     message += "thanks for following!" if payload["following"] else "why'd you unfollow :("
     await bot.send_message(message)

@@ -1,5 +1,5 @@
 import json, time, utils
-from mixer import MixerAPI
+from mixer.MixerAPI import MixerAPI
 from __main__ import settings
 
 mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
