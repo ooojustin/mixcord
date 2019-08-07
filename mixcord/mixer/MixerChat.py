@@ -49,16 +49,6 @@ class MixerChat:
             else:
                 return "{} -> {}".format(name, command["description"])
 
-        def __init__(self, chat, prefix):
-
-            self.chat = chat
-            self.prefix = prefix
-
-            # initialize default commands
-            for name, methods in DEFAULT_COMMANDS.items():
-                for method in methods:
-                    self.add_command(name, method)
-
         def add_command(self, name, method):
 
             if not inspect.iscoroutinefunction(method):
@@ -85,9 +75,6 @@ class MixerChat:
                 self.commands[name].append(command)
             else:
                 self.commands[name] = [command]
-
-        def __call__(self, method):
-            self.add_command(method.__name__, method)
 
         async def handle(self, data):
 
@@ -130,6 +117,19 @@ class MixerChat:
                 await self.chat.send_message(message)
 
             return True
+            
+        def __init__(self, chat, prefix):
+
+            self.chat = chat
+            self.prefix = prefix
+
+            # initialize default commands
+            for name, methods in DEFAULT_COMMANDS.items():
+                for method in methods:
+                    self.add_command(name, method)
+
+        def __call__(self, method):
+            self.add_command(method.__name__, method)
 
     # used to uniquely identify 'method' packets
     packet_id = 0

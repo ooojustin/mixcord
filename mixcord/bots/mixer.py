@@ -111,6 +111,21 @@ async def avatar(data):
     return "link to your avatar: {}".format(data["user_avatar"])
 
 @chat.commands
+async def avatar(data, username):
+    """Provides a link to the avatar of another Mixcord user."""
+
+    if len(username) < 2 or username[:1] != "@":
+        return "please @ the user you'd like to find the uid of."
+
+    username = username[1:]
+    try:
+        channel = api.get_channel(username)
+    except MixerExceptions.NotFound:
+        return "failed to detect user information."
+
+    return "link to @{} avatar: {}".format(username, channel.user.avatarUrl)
+
+@chat.commands
 async def flip(data):
     """Flips a coin to determine if it'll land on heads or tails."""
     choice = random.randint(0, 1)
