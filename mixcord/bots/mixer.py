@@ -133,16 +133,22 @@ async def flip(message):
     return "flipped a coin and picked: " + desc
 
 @chat.commands
-async def add(data, n1, n2):
-    """Adds 2 numbers together and outputs the sum."""
+async def add(message, number1, number2):
+    """Adds number1 and number2 together and outputs the sum."""
+    try:
+        sum = float(number1) + float(number2)
+        return "sum = " + str(sum)
+    except:
+        return "failed to add provided values."
 
-    # make sure both inputs are numeric before trying to use them as floats
-    if not utils.is_number(n1) or not utils.is_number(n2):
-        return "please ensure both parameters are numeric."
-
-    # return the sum of the numbers
-    sum = float(n1) + float(n2)
-    return "sum = " + str(sum)
+@chat.commands
+async def subtract(message, number1, number2):
+    """Subtracts number2 from number1 and outputs the difference."""
+    try:
+        diff = float(number1) - float(number2)
+        return "difference = " + str(diff)
+    except:
+        return "failed to subtract provided values."
 
 @chat.commands
 async def btc(message, currency):
