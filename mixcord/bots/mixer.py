@@ -179,19 +179,33 @@ async def modulus(message, number1, number2):
 
 @chat.commands
 async def btc(message, currency):
-    """Gets the price of BTC given a currency code. (supported: usd, gbp, eur)"""
+    """Gets the price of BTC given a currency code. Run the 'btc_list' command to see all supported currencies."""
 
     try:
-        response = requests.get("https://api.coindesk.com/v1/bpi/currentprice.json")
-        all_prices = response.json()["bpi"]
+        response = requests.get("https://blockchain.info/ticker")
+        prices = response.json()
     except:
         return "failed to parse data from coindesk api."
 
-    price = all_prices.get(currency.upper())
+    price = prices.get(currency.upper())
     if price is None:
         return "unrecognized currency code."
 
-    return "The price of BTC in {} is {}".format(currency.upper(), price["rate"])
+    return "The price of BTC in {} is {}{}".format(currency.upper(), price["symbol"], price["15m"])
+
+@chat.commands
+async def btc_list(message):
+    """Lists all currency codes supported by the 'btc' command."""
+
+    try:
+        response = requests.get("https://blockchain.info/ticker")
+        prices = response.json()
+    except:
+        return "failed to parse data from coindesk api."
+
+    currency_list = list(prices.keys())
+    currencies = ", ".join(currency_list).lower()
+    return "supported currencies: " + currencies
 
 @chat.commands
 async def lunch(message):
