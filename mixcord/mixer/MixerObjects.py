@@ -40,7 +40,13 @@ class MixerChatMessage:
 
     def get_text(self):
         text = ""
-        pieces = self.message["message"]
-        for piece in pieces:
+        for piece in self.message["message"]:
             text += piece["text"]
         return text
+
+    def get_tags(self):
+        tags = list()
+        for piece in self.message["message"]:
+            if piece["type"] == "tag":
+                tags.append(piece["username"])
+        return tags
