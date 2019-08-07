@@ -32,10 +32,10 @@ from bots.discord import send_announcement
 from bots.discord import bot as discord
 
 @chat.commands
-async def shutdown(data):
+async def shutdown(message):
 
     # make sure the person triggering the command is stream owner
-    if not "Owner" in data["user_roles"]:
+    if not message.has_role("Owner"):
         return "permission denied. only owner can use 'shutdown' command."
 
     # shutdown the bot
@@ -44,10 +44,10 @@ async def shutdown(data):
     sys.exit(0)
 
 @chat.commands
-async def restart(data):
+async def restart(message):
 
     # make sure the person triggering the command is stream owner
-    if not "Owner" in data["user_roles"]:
+    if not message.has_role("Owner"):
         return "permission denied. only owner can use 'restart' command."
 
     # restart the bot
@@ -59,17 +59,17 @@ async def restart(data):
     os.execl(sys.executable, *sys.argv)
 
 @chat.commands
-async def announce(data, message):
+async def announce(message, announcement):
 
     # make sure the person triggering the command is stream owner
-    if not "Owner" in data["user_roles"]:
+    if not message.has_role("Owner"):
         return "permission denied. only owner can use 'announce' command."
 
-    await send_announcement(message)
+    await send_announcement(announcement)
     return "announcement has been sent."
 
 @chat.commands
-async def uptime(data):
+async def uptime(message):
     """Displays how long the streamer has been live for."""
 
     # get uptime and check if online
@@ -81,17 +81,17 @@ async def uptime(data):
     return channel.token + " has been live for: " + str(uptime)
 
 @chat.commands
-async def ping(data):
+async def ping(message):
     """Returns 'pong!'"""
     return "pong!"
 
 @chat.commands
-async def uid(data):
+async def uid(message):
     """Tells a user their unique user id on Mixer."""
-    return "your user id is: {}".format(data["user_id"])
+    return "your user id is: {}".format(message.user_id)
 
 @chat.commands
-async def uid(data, username):
+async def uid(message, username):
     """Tells a user the unique user id of a tagged user on Mixer."""
 
     if len(username) < 2 or username[:1] != "@":
@@ -106,12 +106,12 @@ async def uid(data, username):
     return "@{} user id is: {}".format(username, channel.user.id)
 
 @chat.commands
-async def avatar(data):
+async def avatar(message):
     """Provides a user with a link to their Mixer avatar."""
-    return "link to your avatar: {}".format(data["user_avatar"])
+    return "link to your avatar: {}".format(message.user_avatar)
 
 @chat.commands
-async def avatar(data, username):
+async def avatar(message, username):
     """Provides a link to the avatar of another Mixcord user."""
 
     if len(username) < 2 or username[:1] != "@":
@@ -126,7 +126,7 @@ async def avatar(data, username):
     return "link to @{} avatar: {}".format(username, channel.user.avatarUrl)
 
 @chat.commands
-async def flip(data):
+async def flip(message):
     """Flips a coin to determine if it'll land on heads or tails."""
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
@@ -145,7 +145,7 @@ async def add(data, n1, n2):
     return "sum = " + str(sum)
 
 @chat.commands
-async def btc(data, currency):
+async def btc(message, currency):
     """Gets the price of BTC given a currency code. (supported: usd, gbp, eur)"""
 
     try:
@@ -161,9 +161,9 @@ async def btc(data, currency):
     return "The price of BTC in {} is {}".format(currency.upper(), price["rate"])
 
 @chat.commands
-async def lunch(data):
+async def lunch(message):
 
-    if not "Owner" in data["user_roles"]:
+    if not message.has_role("Owner"):
         return "permission denied. only owner can use 'lunch' command."
 
     await chat.send_method_packet(

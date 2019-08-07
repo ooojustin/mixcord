@@ -28,3 +28,19 @@ class MixerChannel:
 
     def get_leaderboard(self, type, limit = 10):
         return self.api.get_leaderboard(type, self.id, limit)
+
+# https://pastebin.com/NW6NcS8z
+class MixerChatMessage:
+
+    def __init__(self, data):
+        self.__dict__.update(**data)
+
+    def has_role(self, role):
+        return role in self.user_roles
+
+    def get_text(self):
+        text = ""
+        pieces = self.message["message"]
+        for piece in pieces:
+            text += piece["text"]
+        return text

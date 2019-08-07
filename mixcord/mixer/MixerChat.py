@@ -2,8 +2,10 @@ import inspect
 import requests
 import shlex
 import asyncio
+import json
 
 from .MixerWS import MixerWS
+from .MixerObjects import MixerChatMessage
 
 class MixerChat:
 
@@ -76,24 +78,18 @@ class MixerChat:
             else:
                 self.commands[name] = [command]
 
-        async def handle(self, data):
+        async def handle(self, message):
 
             # determine the raw message as text
-            message = ""
-            pieces = data["message"]["message"]
-            for piece in pieces: message += piece["text"]
-
-            # verify that prefix is 1 character
-            if len(self.prefix) != 1:
-                raise ValueError("Prefix must be a single character.")
+            text = message.get_text()
 
             # command prefix check
-            if message[:1] != self.prefix:
+            if text[:1] != self.prefix:
                 return False
 
             # handle it as a command
             try:
-                parsed = shlex.split(message) # split string by whitespace and account for quotes
+                parsed = shlex.split(text) # split string by whitespace and account for quotes
                 name = parsed[0][1:].lower() # the name of the command -> 0th item with command prefix removed
                 arguments = parsed[1:] # remove first parsed item, because its the command name
             except:
@@ -110,14 +106,14 @@ class MixerChat:
                 return False
 
             # try to execute the command!
-            data["chat"] = self.chat
-            message = await command["method"](data, *arguments)
-            if message is not None:
-                message = "@{} {}".format(data["user_name"], message)
-                await self.chat.send_message(message)
+            message.chat = self.chat
+            response = await command["method"](message, *arguments)
+            if response is not None:
+                response = "@{} {}".format(message.user_name, response)
+                await self.chat.send_message(response)
 
             return True
-            
+
         def __init__(self, chat, prefix):
 
             self.chat = chat
@@ -156,9 +152,15 @@ class MixerChat:
     }
 
     def __init__(self, api, channel_id, command_prefix = ">"):
+
         self.api = api
         self.channel_id = channel_id
-        self.commands = self.ChatCommands(self, command_prefix)
+
+        # verify that prefix is 1 character
+        if len(command_prefix) != 1:
+            raise ValueError("Prefix must be a single character.")
+        else:
+            self.commands = self.ChatCommands(self, command_prefix)
 
     def __call__(self, method):
         if inspect.iscoroutinefunction(method):
@@ -231,7 +233,8 @@ class MixerChat:
 
                     # custom handling for chat messages (commands?)
                     if packet["event"] == "ChatMessage":
-                        await self.commands.handle(packet["data"])
+                        message = MixerChatMessage(packet["data"])
+                        await self.commands.handle(message)
 
                     # call corresponding event handler
                     func_name = self.event_map[packet["event"]]
@@ -261,10 +264,10 @@ class MixerChat:
     async def delete_message(self, id):
         await self.send_method_packet("deleteMessage", id)
 
-async def help_0(data):
+async def help_0(message):
     """Displays a list of commands that can be used in the chat."""
 
-    chat = data["chat"]
+    chat = message.chat
     command_count = 0
     command_names = list()
 
@@ -290,7 +293,7 @@ async def help_0(data):
             command_names.append("{} ({})".format(name, param_counts))
 
     # delete original >help message
-    await chat.delete_message(data["id"])
+    await chat.delete_message(message.id)
 
     # formate response messages
     message1 = "There are a total of {} commands: {}."
@@ -299,19 +302,18 @@ async def help_0(data):
     message2 = message2.format(chat.commands.prefix)
 
     # whisper formatted response messages to used
-    await chat.send_message(message1, data["user_name"])
+    await chat.send_message(message1, message.user_name)
     await asyncio.sleep(.5) # wait before sending second message :p
-    await chat.send_message(message2, data["user_name"])
+    await chat.send_message(message2, message.user_name)
 
-async def help_1(data, name):
+async def help_1(message, name):
     """Provides a description of a specific command."""
-    chat = data["chat"]
     name = name.lower()
-    return chat.commands.get_help(name)
+    return message.chat.commands.get_help(name)
 
-async def help_2(data, name, parameter_count_or_name):
+async def help_2(message, name, parameter_count_or_name):
     """Provides a description of a command given a parameter count or parameter name."""
-    chat = data["chat"]
+    chat = message.chat
 
     # if the second parameter is an int, assume they're specifying parameter count
     name = name.lower()
