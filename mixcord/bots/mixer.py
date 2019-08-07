@@ -276,9 +276,9 @@ constellation = MixerConstellation(constellation_connected)
 
 # add event to update settings file when tokens are refreshed
 def update_tokens(access_token, refresh_token):
-    settings["mixer"]["access_token"] = access_token
-    settings["mixer"]["refresh_token"] = refresh_token
-    settings_cfg = json.dumps(settings, indent = 4)
+    settings_all["mixer"]["access_token"] = access_token
+    settings_all["mixer"]["refresh_token"] = refresh_token
+    settings_cfg = json.dumps(settings_all, indent = 4)
     utils.write_all_text("settings.cfg", settings_cfg)
     print("access_token and refresh_token have been updated automatically.")
 auth.refreshed_events.append(update_tokens)
