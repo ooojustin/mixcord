@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from __main__ import settings
 from mixer import MixerAPI, MixerChat, MixerConstellation
-import random, utils, json, asyncio, os
+import random, utils, json, asyncio, os, requests
 
 from mixer.MixerAPI import MixerAPI
 from mixer.MixerChat import MixerChat
@@ -186,6 +186,22 @@ async def add(data, n1, n2):
     # return the sum of the numbers
     sum = float(n1) + float(n2)
     return "sum = " + str(sum)
+
+@bot.commands
+async def btc(data, currency):
+    """Gets the price of BTC given a currency code. (supported: usd, gbp, eur)"""
+
+    try:
+        response = requests.get("https://api.coindesk.com/v1/bpi/currentprice.json")
+        all_prices = response.json()["bpi"]
+    except:
+        return "failed to parse data from coindesk api."
+
+    price = all_prices.get(currency.upper())
+    if price is None:
+        return "unrecognized currency code."
+
+    return "The price of BTC in {} is {}".format(currency.upper(), price["rate"])
 
 @bot.commands
 async def lunch(data):
