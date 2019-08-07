@@ -8,6 +8,10 @@ settings = json.loads(settings_raw)
 import database
 database.init()
 
+# logging initialization
+import logging
+logging.basicConfig(level = logging.INFO)
+
 import bots.mixer
 import bots.discord
 

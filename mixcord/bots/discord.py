@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 
 from __main__ import settings, database
-import discord, logging, asyncio, json
+import discord, asyncio, json
 from discord.ext import commands
 
 # import mixer api and mixer chatbot from bots.mixer module
@@ -10,8 +10,7 @@ from bots.mixer import api as api
 from bots.mixer import chat as mixer_chat
 from bots.mixer import channel as channel
 
-# initialize logging module and discord bot
-logging.basicConfig(level = logging.ERROR)
+# initialize discord bot
 bot = commands.Bot(command_prefix = '>')
 
 @bot.command()
