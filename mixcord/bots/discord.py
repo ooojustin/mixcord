@@ -6,8 +6,8 @@ import discord, logging, asyncio, json
 from discord.ext import commands
 
 # import mixer api and mixer chatbot from bots.mixer module
-from bots.mixer import mixer as mixer
-from bots.mixer import bot as mixer_chat
+from bots.mixer import api as api
+from bots.mixer import chat as mixer_chat
 from bots.mixer import channel as channel
 
 # initialize logging module and discord bot
