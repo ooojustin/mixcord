@@ -5,7 +5,6 @@ import inspect
 class MixerWS:
 
     on_connected = None
-    on_disconnected = None
 
     def __init__(self, url, opts = None):
         self.url = url
@@ -19,26 +18,10 @@ class MixerWS:
         self.websocket = await websockets.connect(self.url, **self.opts)
         await self.try_call(self.on_connected)
 
-    async def reconnect(self):
-        await self.try_call(self.on_disconnected)
-        await self.connect()
-
     async def send_packet(self, packet, retried = False):
-        try:
-            packet_raw = json.dumps(packet)
-            await self.websocket.send(packet_raw)
-        except websockets.exceptions.ConnectionClosed:
-            if retried: return None
-            print("reconnecting in send_packet...")
-            await self.reconnect()
-            await self.send_packet(packet, True)
+        packet_raw = json.dumps(packet)
+        await self.websocket.send(packet_raw)
 
     async def receive_packet(self, retried = False):
-        try:
-            packet_raw = await self.websocket.recv()
-            return json.loads(packet_raw)
-        except websockets.exceptions.ConnectionClosed:
-            if retried: return None
-            print("reconnecting in receive_packet...")
-            await self.reconnect()
-            await self.receive_packet(True)
+        packet_raw = await self.websocket.recv()
+        return json.loads(packet_raw)
