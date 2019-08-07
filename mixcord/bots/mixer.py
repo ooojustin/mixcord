@@ -20,8 +20,12 @@ api = MixerAPI(settings["client-id"], settings["client-secret"])
 auth = MixerOAuth(settings["access_token"], settings["refresh_token"])
 
 # initialize chatbot
-channel = api.get_channel(settings["username"])
-chat = MixerChat(api, channel.id)
+try:
+    channel = api.get_channel(settings["username"])
+    chat = MixerChat(api, channel.id)
+except MixerExceptions.NotFound:
+    print("invalid account username specified in settings file.")
+    sys.exit(1)
 
 # import discord bot from bots.discord module
 from bots.discord import send_announcement
@@ -163,7 +167,7 @@ async def uid(data, username):
     username = username[1:]
     try:
         channel = api.get_channel(username)
-    except MixerExceptions.NotFoundException:
+    except MixerExceptions.NotFound:
         return "failed to detect user information."
 
     return "@{} user id is: {}".format(username, channel.user.id)

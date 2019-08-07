@@ -22,9 +22,10 @@ class MixerAPI:
         if response.status_code == 200:
             return MixerChannel(response.json())
         elif response.status_code == 404:
-            raise MixerExceptions.NotFoundException("Channel not found: API returned 404.")
+            raise MixerExceptions.NotFound("Channel not found: API returned 404.")
         else:
-            raise RuntimeError("API returned unhandled status code: " + response.status_code)
+            info = "{} -> {}".format(response.status_code, response.text)
+            raise RuntimeError("API returned unhandled status code: " + info)
 
     def get_user(self, user_id):
         url = "{}/users/{}".format(self.API_URL, user_id)
@@ -32,9 +33,10 @@ class MixerAPI:
         if response.status_code == 200:
             return MixerUser(response.json())
         elif response.status_code == 404:
-            raise MixerExceptions.NotFoundException("User not found: API returned 404.")
+            raise MixerExceptions.NotFound("User not found: API returned 404.")
         else:
-            raise RuntimeError("API returned unhandled status code: " + response.status_code)
+            info = "{} -> {}".format(response.status_code, response.text)
+            raise RuntimeError("API returned unhandled status code: " + info)
 
     def get_shortcode(self, scope = None):
         url = "{}/oauth/shortcode".format(self.API_URL)

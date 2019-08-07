@@ -34,6 +34,6 @@ class MixerOAuth:
                 continue
 
             expires_in = int(token_data["exp"] - time() - 10)
-            print("waiting {} seconds before refreshing access_token".format(expires_in))
+            print("waiting ~{} seconds before refreshing access_token".format(expires_in))
             await asyncio.sleep(expires_in)
             await self.refresh()
