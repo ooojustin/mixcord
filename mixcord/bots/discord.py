@@ -16,11 +16,11 @@ bot = commands.Bot(command_prefix = '>')
 
 @bot.command()
 async def link(ctx):
-    await ctx.send("https://mixer.com/" + channel["token"])
+    await ctx.send("https://mixer.com/" + channel.token)
 
 @bot.command()
 async def leaderboard(ctx):
-    leaderboard = mixer.get_leaderboard('sparks-weekly', channel["id"])
+    leaderboard = api.get_leaderboard('sparks-weekly', channel.id)
     message = ""
     for i in range(len(leaderboard)):
         leader = leaderboard[i]
@@ -41,13 +41,13 @@ async def leaderboard(ctx):
 async def uptime(ctx):
 
     # get uptime and check if online
-    uptime = mixer.get_uptime(channel["id"])
+    uptime = api.get_uptime(channel.id)
     if uptime is None:
-        await ctx.send(channel["token"] + " is not currently online.")
+        await ctx.send(channel.token + " is not currently online.")
         return
 
     # return formatted uptime
-    await ctx.send(channel["token"] + " has been live for: " + str(uptime))
+    await ctx.send(channel.token + " has been live for: " + str(uptime))
 
 # triggered when the discord bot is connected + authenticated
 @bot.event
@@ -65,7 +65,7 @@ async def mixcord(ctx):
         return
 
     # get shortcode stuff from mixer
-    shortcode = mixer.get_shortcode()
+    shortcode = api.get_shortcode()
     code = shortcode["code"]
     handle = shortcode["handle"]
 
@@ -75,7 +75,7 @@ async def mixcord(ctx):
     # poll shortcode checking endpoint with handle until we can move on with authorization_code
     while True:
         await asyncio.sleep(10)
-        response = mixer.check_shortcode(handle)
+        response = api.check_shortcode(handle)
         status_code = response.status_code
         if status_code == 200:
             authorization_code = response.json()["code"]
@@ -87,9 +87,9 @@ async def mixcord(ctx):
             await ctx.author.send("Failed: verification timed out.")
             return
 
-    tokens = mixer.get_token(authorization_code)
-    token_data = mixer.check_token(tokens["access_token"])
-    user_data = mixer.get_user(token_data["sub"])
+    tokens = api.get_token(authorization_code)
+    token_data = api.check_token(tokens["access_token"])
+    user_data = api.get_user(token_data["sub"])
 
     user_id = user_data["id"]
     channel_id = user_data["channel"]["id"]

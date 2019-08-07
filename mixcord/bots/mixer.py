@@ -243,8 +243,7 @@ async def follow_triggered(packet, payload):
 
 async def skill_triggered(packet, payload):
     user = api.get_user(payload["triggeringUserId"])
-    username = user["username"]
-    await chat.send_message("@{} just used a whopping {} {}".format(username, payload["price"], payload["currencyType"].lower()))
+    await chat.send_message("@{} just used a whopping {} {}".format(user.username, payload["price"], payload["currencyType"].lower()))
 
 async def broadcast_triggered(packet, payload):
 
