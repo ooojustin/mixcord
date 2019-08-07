@@ -151,6 +151,33 @@ async def subtract(message, number1, number2):
         return "failed to subtract provided values."
 
 @chat.commands
+async def multiply(message, number1, number2):
+    """Multiplies number1 and number2 and outputs the product."""
+    try:
+        prod = float(number1) * float(number2)
+        return "product = " + str(prod)
+    except:
+        return "failed to multiply provided values."
+
+@chat.commands
+async def divide(message, number1, number2):
+    """Divides number1 by number2 and outputs the quotient."""
+    try:
+        quot = float(number1) / float(number2)
+        return "quotient = " + str(quot)
+    except:
+        return "failed to divide provided values."
+
+@chat.commands
+async def modulus(message, number1, number2):
+    """Products the remainder of the result of number1 divided by number2."""
+    try:
+        rem = float(number1) % float(number2)
+        return "remainder = " + str(rem)
+    except:
+        return "failed to perform modulo operation on provided values."
+
+@chat.commands
 async def btc(message, currency):
     """Gets the price of BTC given a currency code. (supported: usd, gbp, eur)"""
 
