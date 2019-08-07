@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 
 import random, utils, json, asyncio, os, requests
+from threading import Timer
 from time import time
 
 from __main__ import database
@@ -159,6 +160,94 @@ async def bet(message, amount):
     else:
         database.add_balance(message.user_id, -amount)
         return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), settings_all["mixcord"]["currency_name"])
+
+@chat.commands
+async def bet(message, username, amount):
+    """Challenge another member to a 50/50 coin flip! Winner takes the losers bet."""
+
+    # make sure we have a tagged user
+    tags = message.get_tags()
+    if len(tags) == 0:
+        return "please @ the user you're challenging/responding to."
+    else:
+        username = tags[0].lower()
+        message.user_name = message.user_name.lower()
+
+    mixcord_user = database.get_user(message.user_id)
+
+    # handle if somebody is trying to accept or deny
+    if amount == "accept" or amount == "deny":
+
+        # get the pending bet
+        bet = pending_bets.get(username)
+        if bet is None or bet["username"] != message.user_name:
+            return "failed to find the bet you're responding to."
+
+        # delete the pending bet, because we're handling it
+        del pending_bets[username]
+
+        # if the user wants to deny the bet, don't do anything
+        if amount == "deny":
+            return "you have denied the pending bet from @{}.".format(username)
+
+        # if the user wants to accept the bet, continue
+        if amount == "accept":
+
+            # make sure they have enough money to accept
+            if bet["amount"] > mixcord_user["balance"]:
+                return "you have insufficient funds to accept this bet."
+
+            # make sure the issuer of the challenge still has enough money
+            competitor = api.get_channel(username).user
+            challenger_mixcord_user = database.get_user(competitor.id)
+            if bet["amount"] > challenger_mixcord_user["balance"]:
+                return "@{} no longer has sufficient funding to run this bet.".format(username)
+
+            # determine winner/loser
+            pick = random.randint(0, 1) == 1
+            winner_id = competitor.id if pick else message.user_id
+            loser_id = message.user_id if pick else  competitor.id
+            winner_username = username if pick else message.user_name
+            loser_username = message.user_name if pick else username
+
+            # affect balances accordingly
+            database.add_balance(winner_id, bet["amount"])
+            database.add_balance(loser_id, -bet["amount"])
+
+            # end the bet!
+            await chat.send_message("@{} has won {} {}! better luck next time, @{}.".format(winner_username, bet["amount"], settings_all["mixcord"]["currency_name"], loser_username))
+            return None
+
+    # if the amount isnt being written as "accept" or "deny", we're trying to start a new bet
+    # make sure the amount is numeric by converting it to an int
+    try: amount = int(amount)
+    except:
+        return "please enter a numeric amount of {}".format(settings_all["mixcord"]["currency_name"])
+
+    # make sure the challenger has enough money to start the bet
+    if amount > mixcord_user["balance"]:
+        return "you have insufficient funds to request this bet."
+
+    # store challenge information
+    pending_bets[message.user_name] = {
+        "username": username,
+        "amount": amount
+    }
+
+    # send messages indicating the challenge has been issued
+    await chat.send_message("@{} has challenged @{} to a bet of {} {}!".format(message.user_name, username, amount, settings_all["mixcord"]["currency_name"]))
+    await asyncio.sleep(0.5)
+    await chat.send_message("use {}bet @{} [accept/deny] to respond to your pending bet!".format(chat.commands.prefix, message.user_name), username)
+
+    # automatically timeout the bet in 30 seconds
+    async def bet_timeout(username):
+        await asyncio.sleep(30)
+        bet = pending_bets.get(username)
+        if bet is not None:
+            del pending_bets[username]
+            await chat.send_message("@{} your pending bet has timed out.".format(username))
+    asyncio.ensure_future(bet_timeout(message.user_name))
+pending_bets = dict()
 
 @chat.commands
 async def add(message, number1, number2):
