@@ -2,8 +2,10 @@ import sys
 sys.path.append("..")
 
 import random, utils, json, asyncio, os, requests
-from __main__ import settings as settings_all
+from time import time
+
 from __main__ import database
+from __main__ import settings as settings_all
 settings = settings_all["mixer"]
 
 from mixer.MixerAPI import MixerAPI
@@ -239,6 +241,16 @@ async def on_ready(username, user_id): #
 @chat
 async def user_joined(data):
     await chat.send_message("welcome to the stream, @" + data["username"])
+
+# triggered when we receive any message (MixerChatMessage object)
+@chat
+async def handle_message(message):
+    current_time = time()
+    last_reward = last_rewards.get(message.user_name, 0)
+    if current_time - last_reward >= 5 and not message.handled:
+        database.add_balance(message.user_id, 5)
+        last_rewards[message.user_name] = current_time
+last_rewards = dict()
 
 async def follow_triggered(packet, payload):
     message = "@{} ".format(payload["user"]["username"])

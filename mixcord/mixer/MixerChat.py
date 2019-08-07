@@ -2,7 +2,6 @@ import inspect
 import requests
 import shlex
 import asyncio
-import json
 
 from .MixerWS import MixerWS
 from .MixerObjects import MixerChatMessage
