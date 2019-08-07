@@ -97,10 +97,11 @@ async def uid(message):
 async def uid(message, username):
     """Tells a user the unique user id of a tagged user on Mixer."""
 
-    if len(username) < 2 or username[:1] != "@":
-        return "please @ the user you'd like to find the uid of."
+    tags = message.get_tags()
+    if len(tags) == 0:
+        return "please @ a user."
+    else: username = tags[0]
 
-    username = username[1:]
     try:
         channel = api.get_channel(username)
     except MixerExceptions.NotFound:
@@ -117,10 +118,11 @@ async def avatar(message):
 async def avatar(message, username):
     """Provides a link to the avatar of another Mixcord user."""
 
-    if len(username) < 2 or username[:1] != "@":
-        return "please @ the user you'd like to find the uid of."
+    tags = message.get_tags()
+    if len(tags) == 0:
+        return "please @ a user."
+    else: username = tags[0]
 
-    username = username[1:]
     try:
         channel = api.get_channel(username)
     except MixerExceptions.NotFound:
