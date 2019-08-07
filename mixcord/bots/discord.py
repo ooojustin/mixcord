@@ -88,16 +88,13 @@ async def mixcord(ctx):
 
     tokens = api.get_token(authorization_code)
     token_data = api.check_token(tokens["access_token"])
-    user_data = api.get_user(token_data["sub"])
+    user = api.get_user(token_data["sub"])
 
-    user_id = user_data["id"]
-    channel_id = user_data["channel"]["id"]
-
-    database.insert_user(user_id, channel_id, discord_id)
+    database.insert_user(user.id, user.channel.id, discord_id)
     database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"])
 
-    await ctx.author.send("Your Mixer account has been linked: " + user_data["username"])
-    await mixer_chat.send_message("@{} has linked their discord account: {}".format(user_data["username"], ctx.author))
+    await ctx.author.send("Your Mixer account has been linked: " + user.username)
+    await mixer_chat.send_message("@{} has linked their discord account: {}".format(user.username, ctx.author))
 
 async def send_announcement(message):
     guild = bot.get_guild(settings["discord"]["guild"])

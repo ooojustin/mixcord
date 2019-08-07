@@ -35,7 +35,7 @@ class MixerAPI:
         if response.status_code == 200:
             user = MixerUser(response.json())
             user.api = self
-            return channel
+            return user
         elif response.status_code == 404:
             raise MixerExceptions.NotFound("User not found: API returned 404.")
         else:
