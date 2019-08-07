@@ -224,6 +224,10 @@ async def bet(message, username, amount):
     except:
         return "please enter a numeric amount of {}".format(settings_all["mixcord"]["currency_name"])
 
+    # make sure we don't already have a pending bet
+    if pending_bets.get(message.user_name) is not None:
+        return "you already have a pending bet."
+
     # make sure the challenger has enough money to start the bet
     if amount > mixcord_user["balance"]:
         return "you have insufficient funds to request this bet."
@@ -331,6 +335,21 @@ async def balance(message):
     if mixcord_user is None:
         return "your mixer account must be linked to your discord via mixcord before tracking balance."
     return "you have {} {}".format(mixcord_user["balance"], settings_all["mixcord"]["currency_name"])
+
+@chat.commands
+async def balance(message, username):
+    """Outputs the balance of a tagged user."""
+
+    tags = message.get_tags()
+    if len(tags) == 0:
+        return "please @ a user."
+    else: username = tags[0]
+
+    user = api.get_channel(username).user
+    mixcord_user = database.get_user(user.id)
+    balance = None if mixcord_user is None else mixcord_user["balance"]
+
+    return "@{} has {} {}".format(username, balance, settings_all["mixcord"]["currency_name"])
 
 @chat.commands
 async def lunch(message):

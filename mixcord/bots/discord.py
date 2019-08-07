@@ -91,7 +91,7 @@ async def mixcord(ctx):
     user = api.get_user(token_data["sub"])
 
     database.insert_user(user.id, user.channel.id, discord_id)
-    database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"])
+    database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"], database.IDType.DISCORD)
 
     await ctx.author.send("Your Mixer account has been linked: " + user.username)
     await mixer_chat.send_message("@{} has linked their discord account: {}".format(user.username, ctx.author))
