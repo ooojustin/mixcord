@@ -8,27 +8,24 @@ import random, utils, json, asyncio, os
 from mixer.MixerAPI import MixerAPI
 from mixer.MixerChat import MixerChat
 from mixer.MixerConstellation import MixerConstellation
-
-# initialize general mixer api wrapper
-mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
+from mixer.MixerOAuth import MixerOAuth
 
 # initialize chatbot with oauth tokens if needed
 if not "access_token" in settings["mixer"]:
     import init_oauth
 
-# refresh the chatbot access token if needed
-token_data = mixer.check_token(settings["mixer"]["access_token"])
-if not token_data["active"]:
+# initialize general mixer api wrapper and oauth manager
+mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
+auth = MixerOAuth(settings["mixer"]["access_token"], settings["mixer"]["refresh_token"])
 
-    # update access_token and refresh_token from server
-    tokens = mixer.get_token(settings["mixer"]["refresh_token"], refresh = True)
-    settings["mixer"]["access_token"] = tokens["access_token"]
-    settings["mixer"]["refresh_token"] = tokens["refresh_token"]
-
-    # store updated tokens in settings file
+# add event to update settings file when tokens are refreshed
+def update_tokens(access_token, refresh_token):
+    settings["mixer"]["access_token"] = access_token
+    settings["mixer"]["refresh_token"] = refresh_token
     settings_cfg = json.dumps(settings, indent = 4)
     utils.write_all_text("settings.cfg", settings_cfg)
     print("access_token and refresh_token have been updated automatically.")
+auth.refreshed_events.append(update_tokens)
 
 # initialize chatbot
 channel = mixer.get_channel(settings["mixer"]["username"])
