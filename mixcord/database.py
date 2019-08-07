@@ -17,15 +17,11 @@ def update_tokens(discord_id, access_token, refresh_token, expires):
     cursor.execute(query, params)
 
 def user_from_discord(discord_id):
-    query = "SELECT * FROM mixcord WHERE discord_id = ?"
-    params = (discord_id,)
-    cursor.execute(query, params)
+    cursor.execute("SELECT * FROM mixcord WHERE discord_id = ?", (discord_id,))
     return cursor.fetchone()
 
 def user_from_mixer(user_id):
-    query = "SELECT * FROM mixcord WHERE user_id = ?"
-    params = (user_id,)
-    cursor.execute(query, params)
+    cursor.execute("SELECT * FROM mixcord WHERE user_id = ?", (user_id,))
     return cursor.fetchone()
 
 def table_exists(name):
@@ -36,19 +32,16 @@ def table_exists(name):
 
 def init():
 
-    # make sure the table for mixcord doesn't already exist
-    if table_exists("mixcord"):
-        return
-
-    # execute the table creation query
-    cursor.execute("""
-    CREATE TABLE "mixcord" (
-    	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-    	"user_id"	INTEGER UNIQUE,
-        "channel_id" INTEGER UNIQUE,
-    	"discord_id"	INTEGER UNIQUE,
-    	"access_token"	TEXT,
-    	"refresh_token"	TEXT,
-    	"expires"	INTEGER DEFAULT 0
-    )
-    """)
+    # create the mixcord table, if it doesnt exist
+    if not table_exists("mixcord"):
+        cursor.execute("""
+        CREATE TABLE "mixcord" (
+        	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+        	"user_id"	INTEGER UNIQUE,
+            "channel_id" INTEGER UNIQUE,
+        	"discord_id"	INTEGER UNIQUE,
+        	"access_token"	TEXT,
+        	"refresh_token"	TEXT,
+        	"expires"	INTEGER DEFAULT 0
+        )
+        """)
