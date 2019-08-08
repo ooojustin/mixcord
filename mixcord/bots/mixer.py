@@ -143,8 +143,10 @@ async def flip(message):
 @chat.commands
 async def bet(message, amount):
     """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
+
     try: amount = int(amount)
     except: return "invalid 'amount' provided."
+    if amount <= 0: return "please enter a positive 'amount' to bet."
 
     # make sure their discord account is linked
     mixcord_user = database.get_user(message.user_id)
@@ -223,8 +225,12 @@ async def bet(message, username, amount):
     # if the amount isnt being written as "accept" or "deny", we're trying to start a new bet
     # make sure the amount is numeric by converting it to an int
     try: amount = int(amount)
-    except:
-        return "please enter a numeric amount of {}".format(currency_name)
+    except: return "invalid 'amount' provided."
+    if amount <= 0: return "please enter a positive 'amount' to bet."
+
+    # make sure they're not trying to start a bet against themself :/
+    if message.user_name == username:
+        return "you're not able to start a bet against yourself."
 
     # make sure we don't already have a pending bet
     if pending_bets.get(message.user_name) is not None:
@@ -429,8 +435,8 @@ async def deposit(message, amount):
     """Deposits specified amount of balance into the current jackpot."""
 
     try: amount = int(amount)
-    except:
-        return "please specify a valid amount to deposit."
+    except: return "invalid 'amount' provided."
+    if amount <= 0: return "please enter a positive amount to bet."
 
     mixcord_user = database.get_user(message.user_id)
     if mixcord_user is None:
