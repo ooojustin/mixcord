@@ -4,6 +4,7 @@ sys.path.append("..")
 import random, utils, json, asyncio, os, requests
 from threading import Timer
 from time import time
+import dateutil.parser
 
 from __main__ import database
 from __main__ import settings as settings_all
@@ -365,7 +366,7 @@ async def pay(message, username, amount):
     tags = message.get_tags()
     if len(tags) == 0: return "please @ a user."
     else: username = tags[0]
-    
+
     receiver_mixer = api.get_channel(username).user
     receiver_mixcord = database.get_user(receiver_mixer.id)
     sender_mixcord = database.get_user(message.user_id)
@@ -504,6 +505,15 @@ async def deposit(message, amount):
 @chat.commands
 async def discord(message):
     return "here is a link to my discord server: https://justin.ooo/discord - use the '{}mixcord' command when you join!".format(chat.commands.prefix)
+
+@chat.commands
+async def registered(message):
+    """Tells a used when they registered on Mixer."""
+    user = api.get_user(message.user_id)
+    registered = dateutil.parser.parse(user.createdAt)
+    registered_str = registered.strftime("%B %Y day @ %I:%M %p (%Z)").lower()
+    registered_str = registered_str.replace("day", str(registered.day) + utils.day_suffix(registered.day))
+    return registered_str
 
 # triggered when the mixer bot is connected + authenticated
 @chat

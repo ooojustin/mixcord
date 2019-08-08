@@ -1,3 +1,7 @@
+# https://stackoverflow.com/a/5891598/5699643
+def day_suffix(d):
+    return 'th' if 11<=d<=13 else {1:'st',2:'nd',3:'rd'}.get(d%10, 'th')
+
 def get_percentage_str(part, whole):
     quotient = float(part) / float(whole)
     percentage = quotient * 100
