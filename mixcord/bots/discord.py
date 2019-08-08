@@ -2,6 +2,7 @@ import sys
 sys.path.append("..")
 
 from __main__ import settings, database
+from database import cursor as db_cursor
 import discord, asyncio, json
 from discord.ext import commands
 
@@ -12,6 +13,19 @@ from bots.mixer import channel as channel
 
 # initialize discord bot
 bot = commands.Bot(command_prefix = '>')
+
+@bot.command()
+async def leaderboard_jarks(ctx):
+    db_cursor.execute("SELECT * FROM mixcord ORDER BY balance DESC LIMIT 10")
+    data = db_cursor.fetchall()
+    message = ""
+    for i in range(len(data)):
+        row = data[i]
+        place = i + 1
+        member = bot.get_user(row["discord_id"])
+        username = member.mention
+        message += "{} is in {} place w/ {} jarks\n".format(username, place, row["balance"])
+    await ctx.send(message)
 
 @bot.command()
 async def link(ctx):
