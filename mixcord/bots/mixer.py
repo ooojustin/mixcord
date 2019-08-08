@@ -349,7 +349,7 @@ async def balance(message, username):
 
     user = api.get_channel(username).user
     mixcord_user = database.get_user(user.id)
-    balance = None if mixcord_user is None else mixcord_user["balance"]
+    balance = 0 if mixcord_user is None else mixcord_user["balance"]
 
     return "@{} has {} {}".format(username, balance, currency_name)
 
@@ -365,6 +365,94 @@ async def lunch(message):
         ["Chinese Food", "Mexican Food", "Pizza"], 30)
 
     return "starting poll for lunch... cast your vote!"
+
+@chat.commands
+async def jackpot(message):
+    """Outputs information about the current jackpot, if there's one running."""
+
+    if current_jackpot is None:
+        return "a jackpot is not currently running."
+
+    response = "a jackpot is active with {} competitors and a total of {} {}!".format(len(current_jackpot["users"]), current_jackpot["total"], currency_name)
+
+    user = current_jackpot["users"].get(message.user_name)
+    if user is not None:
+        response += " you have a {}% chance of winning.".format(utils.get_percentage_str(user["amount"], current_jackpot["total"]))
+
+    return response
+current_jackpot = None
+
+@chat.commands
+async def jackpot_start(message, duration):
+
+    if not message.has_role("Owner"):
+        return "only the stream owner can start a jackpot."
+
+    try: duration = int(duration)
+    except:
+        return "please enter a valid jackput duration in seconds."
+
+    # start a jackpot
+    global current_jackpot
+    current_jackpot = {
+        "started": time(),
+        "ends": time() + duration,
+        "total": 0,
+        "users": dict()
+    }
+
+    # set a timeout for ending the jackpot
+    async def jackpot_end():
+        await asyncio.sleep(duration - 3)
+        for i in range(3, 0, -1):
+            await chat.send_message("jackpot ends in {} seconds...".format(i))
+            await asyncio.sleep(1)
+        global current_jackpot
+        running_total = 0
+        choice = random.randint(0, current_jackpot["total"])
+        for username, user in current_jackpot["users"].items():
+            running_total += user["amount"]
+            if choice <= running_total:
+                winner = user
+                winner["username"] = username
+                break
+        chance = utils.get_percentage_str(winner["amount"], current_jackpot["total"])
+        await chat.send_message("@{} won the jackpot with a {}% chance! total: {} {}".format(winner["username"], chance, current_jackpot["total"], currency_name))
+        database.add_balance(winner["id"], current_jackpot["total"])
+        current_jackpot = None
+    asyncio.ensure_future(jackpot_end())
+
+    return "jackpot has been started! it will end in {} seconds...".format(duration)
+
+@chat.commands
+async def deposit(message, amount):
+    """Deposits specified amount of balance into the current jackpot."""
+
+    try: amount = int(amount)
+    except:
+        return "please specify a valid amount to deposit."
+
+    mixcord_user = database.get_user(message.user_id)
+    if mixcord_user is None:
+        return "your discord must be linked to your mixer via mixcord to participate in jackpots."
+
+    if mixcord_user["balance"] < amount:
+        return "you do not have sufficient funds to deposit that many {}.".format(currency_name)
+
+    if current_jackpot is None:
+        return "no jackpot is currently running."
+
+    current_jackpot["total"] += amount
+    database.add_balance(message.user_id, -amount)
+    if message.user_name in current_jackpot["users"]:
+        current_jackpot["users"][message.user_name]["amount"] += amount
+        return "you have deposited an additional {} {} to total {} this pot.".format(amount, currency_name, current_jackpot["users"][message.user_name]["amount"])
+    else:
+        current_jackpot["users"][message.user_name] = {
+            "id": message.user_id,
+            "amount": amount
+        }
+        return "you have entered the pot with {} {}.".format(amount, currency_name)
 
 # triggered when the mixer bot is connected + authenticated
 @chat
