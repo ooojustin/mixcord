@@ -349,8 +349,7 @@ async def balance(message, username):
     """Outputs the balance of a tagged user."""
 
     tags = message.get_tags()
-    if len(tags) == 0:
-        return "please @ a user."
+    if len(tags) == 0: return "please @ a user."
     else: username = tags[0]
 
     user = api.get_channel(username).user
@@ -358,6 +357,32 @@ async def balance(message, username):
     balance = 0 if mixcord_user is None else mixcord_user["balance"]
 
     return "@{} has {} {}".format(username, balance, currency_name)
+
+@chat.commands
+async def pay(message, username, amount):
+    """Send some of your balance to a tagged user."""
+
+    tags = message.get_tags()
+    if len(tags) == 0: return "please @ a user."
+    else: username = tags[0]
+    
+    receiver_mixer = api.get_channel(username).user
+    receiver_mixcord = database.get_user(receiver_mixer.id)
+    sender_mixcord = database.get_user(message.user_id)
+    if sender_mixcord is None:
+        return "your mixer account must be linked to your discord via mixcord before sending balance."
+    elif receiver_mixcord is None:
+        return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, username)
+
+    try: amount = int(amount)
+    except: return "please enter a valid amount to send."
+    if amount <= 0: return "amount must be a positive number."
+    if sender_mixcord["balance"] < amount: return "you have insufficient balance."
+
+    database.add_balance(sender_mixcord["user_id"], -amount)
+    database.add_balance(receiver_mixcord["user_id"], amount)
+    return "you have successfully sent {} {} to @{}!".format(amount, currency_name, username)
+
 
 @chat.commands
 async def lunch(message):
