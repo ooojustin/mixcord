@@ -385,8 +385,43 @@ async def jackpot(message):
     if user is not None:
         response += " you have a {}% chance of winning.".format(utils.get_percentage_str(user["amount"], current_jackpot["total"]))
 
+    time_left = int(current_jackpot["ends"] - time())
+    response += " it ends in {} seconds...".format(time_left)
+
     return response
 current_jackpot = None
+
+async def jackpot_end(duration):
+
+    # countdown
+    await asyncio.sleep(duration - 3)
+    for i in range(3, 0, -1):
+        await chat.send_message("jackpot ends in {} seconds...".format(i))
+        await asyncio.sleep(1)
+
+    # make sure ppl are in the pot
+    global current_jackpot
+    if len(current_jackpot["users"]) == 0:
+        await chat.send_message("nobody entered the jackpot so no winner was chosen :(")
+        return
+
+    # determine a winner
+    running_total = 0
+    choice = random.randint(1, current_jackpot["total"])
+    for username, user in current_jackpot["users"].items():
+        running_total += user["amount"]
+        if choice <= running_total:
+            winner = user
+            winner["username"] = username
+            break
+
+    # notify the chat
+    chance = utils.get_percentage_str(winner["amount"], current_jackpot["total"])
+    await chat.send_message("@{} won the jackpot with a {}% chance! total: {} {}".format(winner["username"], chance, current_jackpot["total"], currency_name))
+
+    # add balance to user and end current jackpot
+    database.add_balance(winner["id"], current_jackpot["total"])
+    current_jackpot = None
 
 @chat.commands
 async def jackpot_start(message, duration):
@@ -408,30 +443,7 @@ async def jackpot_start(message, duration):
     }
 
     # set a timeout for ending the jackpot
-    async def jackpot_end():
-        await asyncio.sleep(duration - 3)
-        for i in range(3, 0, -1):
-            await chat.send_message("jackpot ends in {} seconds...".format(i))
-            await asyncio.sleep(1)
-        global current_jackpot
-        if len(current_jackpot["users"]) == 0:
-            # nobody entered
-            await chat.send_message("nobody entered the jackpot so no winner was chosen :(")
-            return
-        running_total = 0
-        choice = random.randint(1, current_jackpot["total"])
-        for username, user in current_jackpot["users"].items():
-            running_total += user["amount"]
-            if choice <= running_total:
-                winner = user
-                winner["username"] = username
-                break
-        chance = utils.get_percentage_str(winner["amount"], current_jackpot["total"])
-        await chat.send_message("@{} won the jackpot with a {}% chance! total: {} {}".format(winner["username"], chance, current_jackpot["total"], currency_name))
-        database.add_balance(winner["id"], current_jackpot["total"])
-        current_jackpot = None
-    asyncio.ensure_future(jackpot_end())
-
+    asyncio.ensure_future(jackpot_end(duration))
     return "jackpot has been started! it will end in {} seconds...".format(duration)
 
 @chat.commands
