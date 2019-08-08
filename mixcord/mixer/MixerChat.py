@@ -93,19 +93,18 @@ class MixerChat:
                 arguments = parsed[1:] # remove first parsed item, because its the command name
             except:
                 await self.chat.send_message("an error occurred while parsing that command.")
-                return False
+                return True
 
             # make sure the command exists
             command = self.get_command(name, len(arguments))
             if command is None:
                 await self.chat.send_message("unrecognized command '{}'.".format(name))
-                return False
+                return True
             elif command is False:
                 await self.chat.send_message("invalid parameter count for command '{}'.".format(name))
-                return False
+                return True
 
             # try to execute the command!
-            message.chat = self.chat
             response = await command["method"](message, *arguments)
             if response is not None:
                 response = "@{} {}".format(message.user_name, response)
@@ -232,6 +231,7 @@ class MixerChat:
                 # custom handling for chat messages (commands and stuff)
                 if packet["event"] == "ChatMessage":
                     message = MixerChatMessage(packet["data"])
+                    message.chat = self
                     message.handled = await self.commands.handle(message)
                     await self.call_func("handle_message", message)
                     continue
@@ -262,9 +262,6 @@ class MixerChat:
         else:
             await self.send_method_packet("whisper", user, message)
 
-    async def delete_message(self, id):
-        await self.send_method_packet("deleteMessage", id)
-
 async def help_0(message):
     """Displays a list of commands that can be used in the chat."""
 
@@ -294,7 +291,7 @@ async def help_0(message):
             command_names.append("{} ({})".format(name, param_counts))
 
     # delete original >help message
-    await chat.delete_message(message.id)
+    await message.delete()
 
     # formate response messages
     message1 = "There are a total of {} commands: {}."

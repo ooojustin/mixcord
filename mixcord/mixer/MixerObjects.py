@@ -50,3 +50,6 @@ class MixerChatMessage:
             if piece["type"] == "tag":
                 tags.append(piece["username"])
         return tags
+
+    async def delete(self):
+        await self.chat.send_method_packet("deleteMessage", self.id)
