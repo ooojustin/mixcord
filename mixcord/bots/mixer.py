@@ -476,6 +476,10 @@ async def deposit(message, amount):
         }
         return "you have entered the pot with {} {}.".format(amount, currency_name)
 
+@chat.commands
+async def discord(message):
+    return "here is a link to my discord server: https://justin.ooo/discord - use the '{}mixcord' command when you join!".format(chat.commands.prefix)
+
 # triggered when the mixer bot is connected + authenticated
 @chat
 async def on_ready(username, user_id): #
