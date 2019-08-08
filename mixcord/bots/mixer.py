@@ -414,8 +414,12 @@ async def jackpot_start(message, duration):
             await chat.send_message("jackpot ends in {} seconds...".format(i))
             await asyncio.sleep(1)
         global current_jackpot
+        if len(current_jackpot["users"]) == 0:
+            # nobody entered
+            await chat.send_message("nobody entered the jackpot so no winner was chosen :(")
+            return
         running_total = 0
-        choice = random.randint(0, current_jackpot["total"])
+        choice = random.randint(1, current_jackpot["total"])
         for username, user in current_jackpot["users"].items():
             running_total += user["amount"]
             if choice <= running_total:
