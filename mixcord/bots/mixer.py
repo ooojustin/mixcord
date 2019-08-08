@@ -490,6 +490,14 @@ async def user_joined(data):
 # triggered when we receive any message (MixerChatMessage object)
 @chat
 async def handle_message(message):
+
+    skill = message.message["meta"].get("skill")
+    if database.get_user(message.user_id) is not None and skill is not None:
+        if skill["currency"] == "Sparks":
+            reward = int(skill["cost"] / 10)
+            database.add_balance(message.user_id, reward)
+            await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), message.user_name)
+
     current_time = time()
     last_reward = last_rewards.get(message.user_name, 0)
     if current_time - last_reward >= 5 and not message.handled:
@@ -503,8 +511,19 @@ async def follow_triggered(packet, payload):
     await chat.send_message(message)
 
 async def skill_triggered(packet, payload):
-    user = api.get_user(payload["triggeringUserId"])
+    # payload: https://pastebin.com/R2rZzsja
+
+    # announce skill in chat
+    user_id = payload["triggeringUserId"]
+    user = api.get_user(user_id)
     await chat.send_message("@{} just used a whopping {} {}".format(user.username, payload["price"], payload["currencyType"].lower()))
+
+    # reward them with balance (sparks / 10)
+    if database.get_user(user_id) is not None and payload["currencyType"] == "Sparks":
+        reward = int(payload["price"] / 10)
+        database.add_balance(user_id, reward)
+        await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), user.username)
+
 
 async def broadcast_triggered(packet, payload):
 
