@@ -51,5 +51,8 @@ class MixerChatMessage:
                 tags.append(piece["username"])
         return tags
 
+    def get_skill(self):
+        return self.message["meta"].get("skill")
+
     async def delete(self):
         await self.chat.send_method_packet("deleteMessage", self.id)

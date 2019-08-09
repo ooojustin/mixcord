@@ -145,9 +145,9 @@ async def flip(message):
 async def bet(message, amount):
     """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
 
-    try: amount = int(amount)
-    except: return "invalid 'amount' provided."
-    if amount <= 0: return "please enter a positive 'amount' to bet."
+    # make sure 'amount' is a positive number
+    amount = utils.get_positive_int(amount)
+    if amount is None: return "amount must be a positive integer."
 
     # make sure their discord account is linked
     mixcord_user = database.get_user(message.user_id)
@@ -171,12 +171,11 @@ async def bet(message, username, amount):
     """Challenge another member to a 50/50 coin flip! Winner takes the losers bet."""
 
     # make sure we have a tagged user
-    tags = message.get_tags()
-    if len(tags) == 0:
-        return "please @ the user you're challenging/responding to."
-    else:
-        username = tags[0].lower()
-        message.user_name = message.user_name.lower()
+    username = utils.get_first(message.get_tags())
+    if username is None: return "please @ a user."
+
+    username = username.lower()
+    message.user_name = message.user_name.lower()
 
     mixcord_user = database.get_user(message.user_id)
 
@@ -223,11 +222,9 @@ async def bet(message, username, amount):
             await chat.send_message("@{} has won {} {}! better luck next time, @{}.".format(winner_username, bet["amount"], currency_name, loser_username))
             return None
 
-    # if the amount isnt being written as "accept" or "deny", we're trying to start a new bet
     # make sure the amount is numeric by converting it to an int
-    try: amount = int(amount)
-    except: return "invalid 'amount' provided."
-    if amount <= 0: return "please enter a positive 'amount' to bet."
+    amount = utils.get_positive_int(amount)
+    if amount is None: return "amount must be a positive integer."
 
     # make sure they're not trying to start a bet against themself :/
     if message.user_name == username:
@@ -349,9 +346,8 @@ async def balance(message):
 async def balance(message, username):
     """Outputs the balance of a tagged user."""
 
-    tags = message.get_tags()
-    if len(tags) == 0: return "please @ a user."
-    else: username = tags[0]
+    username = utils.get_first(message.get_tags())
+    if username is None: return "please @ a user."
 
     user = api.get_channel(username).user
     mixcord_user = database.get_user(user.id)
@@ -363,9 +359,8 @@ async def balance(message, username):
 async def pay(message, username, amount):
     """Send some of your balance to a tagged user."""
 
-    tags = message.get_tags()
-    if len(tags) == 0: return "please @ a user."
-    else: username = tags[0]
+    username = utils.get_first(message.get_tags())
+    if username is None: return "please @ a user."
 
     receiver_mixer = api.get_channel(username).user
     receiver_mixcord = database.get_user(receiver_mixer.id)
@@ -375,10 +370,11 @@ async def pay(message, username, amount):
     elif receiver_mixcord is None:
         return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, username)
 
-    try: amount = int(amount)
-    except: return "please enter a valid amount to send."
-    if amount <= 0: return "amount must be a positive number."
-    if sender_mixcord["balance"] < amount: return "you have insufficient balance."
+    amount = utils.get_positive_int(amount)
+    if amount is None: return "amount must be a positive integer."
+
+    if sender_mixcord["balance"] < amount:
+        return "you have insufficient balance."
 
     database.add_balance(sender_mixcord["user_id"], -amount)
     database.add_balance(receiver_mixcord["user_id"], amount)
@@ -405,9 +401,9 @@ async def jackpot(message):
     if current_jackpot is None:
         return "a jackpot is not currently running."
 
+    user = current_jackpot["users"].get(message.user_name) # users entry in jackpot
     response = "a jackpot is active with {} competitors and a total of {} {}!".format(len(current_jackpot["users"]), current_jackpot["total"], currency_name)
 
-    user = current_jackpot["users"].get(message.user_name)
     if user is not None:
         response += " you have a {}% chance of winning.".format(utils.get_percentage_str(user["amount"], current_jackpot["total"]))
 
@@ -455,9 +451,8 @@ async def jackpot_start(message, duration):
     if not message.has_role("Owner"):
         return "only the stream owner can start a jackpot."
 
-    try: duration = int(duration)
-    except:
-        return "please enter a valid jackput duration in seconds."
+    duration = utils.get_positive_int(duration)
+    if duration is None: return "please enter a valid jackput duration in seconds."
 
     # start a jackpot
     global current_jackpot
@@ -476,9 +471,8 @@ async def jackpot_start(message, duration):
 async def deposit(message, amount):
     """Deposits specified amount of balance into the current jackpot."""
 
-    try: amount = int(amount)
-    except: return "invalid 'amount' provided."
-    if amount <= 0: return "please enter a positive amount to bet."
+    amount = utils.get_positive_int(amount)
+    if amount is None: return "amount must be a positive integer."
 
     mixcord_user = database.get_user(message.user_id)
     if mixcord_user is None:
@@ -530,7 +524,7 @@ async def user_joined(data):
 @chat
 async def handle_message(message):
 
-    skill = message.message["meta"].get("skill")
+    skill = message.get_skill()
     if database.get_user(message.user_id) is not None and skill is not None:
         if skill["currency"] == "Sparks":
             reward = int(skill["cost"] / 10)
