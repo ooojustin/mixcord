@@ -120,20 +120,9 @@ async def avatar(message):
     return "link to your avatar: {}".format(message.user_avatar)
 
 @chat.commands
-async def avatar(message, username):
+async def avatar(message, user: ParamType.MIXER_USER):
     """Provides a link to the avatar of another Mixcord user."""
-
-    tags = message.get_tags()
-    if len(tags) == 0:
-        return "please @ a user."
-    else: username = tags[0]
-
-    try:
-        channel = api.get_channel(username)
-    except MixerExceptions.NotFound:
-        return "failed to detect user information."
-
-    return "link to @{} avatar: {}".format(username, channel.user.avatarUrl)
+    return "link to @{} avatar: {}".format(user.username, user.avatarUrl)
 
 @chat.commands
 async def flip(message):

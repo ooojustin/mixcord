@@ -11,7 +11,8 @@ class MixerChat:
 
     class ParamType(Enum):
         NUMBER = 0,
-        POSITIVE_NUMBER = 1
+        POSITIVE_NUMBER = 1,
+        MIXER_USER = 2
 
     class ChatCommands:
 
@@ -119,10 +120,16 @@ class MixerChat:
                     try:
                         parameters[i] = float(parameters[i])
                     except:
-                        await self.chat.send_message("the '{}' parameter must be numeric.".format(param_name))
+                        await self.chat.send_message("the '{}' parameter must be numeric.".format(param_names[i]))
                         return True
                     if param_object.annotation == ParamType.POSITIVE_NUMBER and parameters[i] <= 0:
                         await self.chat.send_message("the '{}' parameter must be a positive number.".format(param_name))
+                        return True
+                elif param_object.annotation == ParamType.MIXER_USER:
+                    try:
+                        parameters[i] = self.chat.api.get_channel(parameters[i][1:]).user
+                    except:
+                        await self.chat.send_message("the '{}' parameter must be a tagged user.".format(param_names[i]))
                         return True
 
             # try to execute the command!
