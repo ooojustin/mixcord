@@ -126,6 +126,9 @@ class MixerChat:
                         await self.chat.send_message("the '{}' parameter must be a positive number.".format(param_name))
                         return True
                 elif param_object.annotation == ParamType.MIXER_USER:
+                    if parameters[i][:1] != "@":
+                        await self.chat.send_message("the '{}' parameter must be a tagged user.".format(param_names[i]))
+                        return True
                     try:
                         parameters[i] = self.chat.api.get_channel(parameters[i][1:]).user
                     except:
