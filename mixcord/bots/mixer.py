@@ -12,11 +12,12 @@ from __main__ import settings as settings_all
 settings = settings_all["mixer"]
 currency_name = settings_all["mixcord"]["currency_name"]
 
+import mixer.MixerExceptions as MixerExceptions
 from mixer.MixerAPI import MixerAPI
-from mixer.MixerChat import MixerChat
 from mixer.MixerConstellation import MixerConstellation
 from mixer.MixerOAuth import MixerOAuth
-import mixer.MixerExceptions as MixerExceptions
+from mixer.MixerChat import MixerChat
+ParamType = MixerChat.ParamType
 
 # initialize chatbot with oauth tokens if needed
 if not "access_token" in settings:
@@ -142,14 +143,11 @@ async def flip(message):
     return "flipped a coin and picked: " + desc
 
 @chat.commands
-async def bet(message, amount):
+async def bet(message, amount: ParamType.POSITIVE_NUMBER):
     """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
 
-    # make sure 'amount' is a positive number
-    amount = utils.get_positive_int(amount)
-    if amount is None: return "amount must be a positive integer."
-
     # make sure their discord account is linked
+    amount = int(amount)
     mixcord_user = database.get_user(message.user_id)
     if mixcord_user is None:
         return "your mixer account must be linked to your discord via mixcord to use this command."
@@ -260,46 +258,37 @@ async def bet(message, username, amount):
 pending_bets = dict()
 
 @chat.commands
-async def add(message, number1, number2):
+async def add(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Adds number1 and number2 together and outputs the sum."""
-    try:
-        sum = float(number1) + float(number2)
-        return "sum = " + str(sum)
-    except:
-        return "failed to add provided values."
+    sum = number1 + number2
+    return "sum = " + str(sum)
 
 @chat.commands
-async def subtract(message, number1, number2):
+async def subtract(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Subtracts number2 from number1 and outputs the difference."""
-    try:
-        diff = float(number1) - float(number2)
-        return "difference = " + str(diff)
-    except:
-        return "failed to subtract provided values."
+    diff = number1 - number2
+    return "difference = " + str(diff)
 
 @chat.commands
-async def multiply(message, number1, number2):
+async def multiply(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Multiplies number1 and number2 and outputs the product."""
-    try:
-        prod = float(number1) * float(number2)
-        return "product = " + str(prod)
-    except:
-        return "failed to multiply provided values."
+    prod = number1 * number2
+    return "product = " + str(prod)
 
 @chat.commands
-async def divide(message, number1, number2):
+async def divide(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Divides number1 by number2 and outputs the quotient."""
     try:
-        quot = float(number1) / float(number2)
+        quot = number1 / number2
         return "quotient = " + str(quot)
     except:
         return "failed to divide provided values."
 
 @chat.commands
-async def modulus(message, number1, number2):
+async def modulus(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Products the remainder of the result of number1 divided by number2."""
     try:
-        rem = float(number1) % float(number2)
+        rem = number1 % number2
         return "remainder = " + str(rem)
     except:
         return "failed to perform modulo operation on provided values."

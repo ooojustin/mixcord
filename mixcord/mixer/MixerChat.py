@@ -2,11 +2,16 @@ import inspect
 import requests
 import shlex
 import asyncio
+from enum import Enum
 
 from .MixerWS import MixerWS
 from .MixerObjects import MixerChatMessage
 
 class MixerChat:
+
+    class ParamType(Enum):
+        NUMBER = 0,
+        POSITIVE_NUMBER = 1
 
     class ChatCommands:
 
@@ -90,13 +95,13 @@ class MixerChat:
             try:
                 parsed = shlex.split(text) # split string by whitespace and account for quotes
                 name = parsed[0][1:].lower() # the name of the command -> 0th item with command prefix removed
-                arguments = parsed[1:] # remove first parsed item, because its the command name
+                parameters = parsed[1:] # remove first parsed item, because its the command name
             except:
                 await self.chat.send_message("an error occurred while parsing that command.")
                 return True
 
             # make sure the command exists
-            command = self.get_command(name, len(arguments))
+            command = self.get_command(name, len(parameters))
             if command is None:
                 await self.chat.send_message("unrecognized command '{}'.".format(name))
                 return True
@@ -104,8 +109,24 @@ class MixerChat:
                 await self.chat.send_message("invalid parameter count for command '{}'.".format(name))
                 return True
 
+            # handle parameter type annotations
+            ParamType = self.chat.ParamType
+            param_names = command["params"]
+            param_objects = command["signature"].parameters
+            for i in range(len(parameters)):
+                param_object = param_objects[param_names[i]]
+                if param_object.annotation == ParamType.NUMBER or param_object.annotation == ParamType.POSITIVE_NUMBER:
+                    try:
+                        parameters[i] = float(parameters[i])
+                    except:
+                        await self.chat.send_message("the '{}' parameter must be numeric.".format(param_name))
+                        return True
+                    if param_object.annotation == ParamType.POSITIVE_NUMBER and parameters[i] <= 0:
+                        await self.chat.send_message("the '{}' parameter must be a positive number.".format(param_name))
+                        return True
+
             # try to execute the command!
-            response = await command["method"](message, *arguments)
+            response = await command["method"](message, *parameters)
             if response is not None:
                 response = "@{} {}".format(message.user_name, response)
                 await self.chat.send_message(response)
