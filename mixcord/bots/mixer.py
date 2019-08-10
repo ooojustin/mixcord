@@ -99,20 +99,9 @@ async def uid(message):
     return "your user id is: {}".format(message.user_id)
 
 @chat.commands
-async def uid(message, username):
+async def uid(message, user: ParamType.MIXER_USER):
     """Tells a user the unique user id of a tagged user on Mixer."""
-
-    tags = message.get_tags()
-    if len(tags) == 0:
-        return "please @ a user."
-    else: username = tags[0]
-
-    try:
-        channel = api.get_channel(username)
-    except MixerExceptions.NotFound:
-        return "failed to detect user information."
-
-    return "@{} user id is: {}".format(username, channel.user.id)
+    return "@{} user id is: {}".format(user.username, user.id)
 
 @chat.commands
 async def avatar(message):
@@ -154,14 +143,10 @@ async def bet(message, amount: ParamType.POSITIVE_NUMBER):
         return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), currency_name)
 
 @chat.commands
-async def bet(message, username, amount):
+async def bet(message, user: ParamType.MIXER_USER, amount):
     """Challenge another member to a 50/50 coin flip! Winner takes the losers bet."""
 
-    # make sure we have a tagged user
-    username = utils.get_first(message.get_tags())
-    if username is None: return "please @ a user."
-
-    username = username.lower()
+    username = user.username.lower()
     message.user_name = message.user_name.lower()
 
     mixcord_user = database.get_user(message.user_id)
@@ -189,9 +174,8 @@ async def bet(message, username, amount):
                 return "you have insufficient funds to accept this bet."
 
             # make sure the issuer of the challenge still has enough money
-            competitor = api.get_channel(username).user
-            challenger_mixcord_user = database.get_user(competitor.id)
-            if bet["amount"] > challenger_mixcord_user["balance"]:
+            competitor_mixcord_user = database.get_user(user.id)
+            if bet["amount"] > competitor_mixcord_user["balance"]:
                 return "@{} no longer has sufficient funding to run this bet.".format(username)
 
             # determine winner/loser
@@ -321,42 +305,31 @@ async def balance(message):
     return "you have {} {}".format(mixcord_user["balance"], currency_name)
 
 @chat.commands
-async def balance(message, username):
+async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
-
-    username = utils.get_first(message.get_tags())
-    if username is None: return "please @ a user."
-
-    user = api.get_channel(username).user
     mixcord_user = database.get_user(user.id)
     balance = 0 if mixcord_user is None else mixcord_user["balance"]
-
     return "@{} has {} {}".format(username, balance, currency_name)
 
 @chat.commands
-async def pay(message, username, amount):
+async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NUMBER):
     """Send some of your balance to a tagged user."""
 
-    username = utils.get_first(message.get_tags())
-    if username is None: return "please @ a user."
-
-    receiver_mixer = api.get_channel(username).user
-    receiver_mixcord = database.get_user(receiver_mixer.id)
+    receiver_mixcord = database.get_user(user.id)
     sender_mixcord = database.get_user(message.user_id)
+
     if sender_mixcord is None:
         return "your mixer account must be linked to your discord via mixcord before sending balance."
     elif receiver_mixcord is None:
         return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, username)
 
-    amount = utils.get_positive_int(amount)
-    if amount is None: return "amount must be a positive integer."
-
+    amount = int(amount)
     if sender_mixcord["balance"] < amount:
         return "you have insufficient balance."
 
     database.add_balance(sender_mixcord["user_id"], -amount)
     database.add_balance(receiver_mixcord["user_id"], amount)
-    return "you have successfully sent {} {} to @{}!".format(amount, currency_name, username)
+    return "you have successfully sent {} {} to @{}!".format(amount, currency_name, user.username)
 
 
 @chat.commands
@@ -446,12 +419,10 @@ async def jackpot_start(message, duration):
     return "jackpot has been started! it will end in {} seconds...".format(duration)
 
 @chat.commands
-async def deposit(message, amount):
+async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
     """Deposits specified amount of balance into the current jackpot."""
 
-    amount = utils.get_positive_int(amount)
-    if amount is None: return "amount must be a positive integer."
-
+    amount = int(amount)
     mixcord_user = database.get_user(message.user_id)
     if mixcord_user is None:
         return "your discord must be linked to your mixer via mixcord to participate in jackpots."
