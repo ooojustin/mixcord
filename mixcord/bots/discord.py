@@ -3,7 +3,7 @@ sys.path.append("..")
 
 from __main__ import settings, database
 from database import cursor as db_cursor
-import discord, asyncio, json
+import discord, asyncio, json, utils
 from discord.ext import commands
 
 # import mixer api and mixer chatbot from bots.mixer module
@@ -23,8 +23,11 @@ async def leaderboard_jarks(ctx):
         row = data[i]
         place = i + 1
         member = bot.get_user(row["discord_id"])
-        username = member.mention
-        message += "{} is in {} place w/ {} jarks\n".format(username, place, row["balance"])
+        if not member is None:
+            username = member.mention
+        else:
+            username = "**{}**".format(api.get_user(row["user_id"]).username)
+        message += "{} is in {}{} place w/ {} jarks\n".format(username, place, utils.num_suffix(place), row["balance"])
     await ctx.send(message)
 
 @bot.command()
@@ -44,10 +47,10 @@ async def leaderboard(ctx):
         mixcord_user = database.get_user(user_id)
         if mixcord_user is not None:
             member = bot.get_user(mixcord_user["discord_id"])
-            username = member.mention
+            username = "**{}**".format(username) if member is None else member.mention
         else:
             username = "**{}**".format(username)
-        message += "{} is in {} place w/ {} sparks\n".format(username, place, sparks)
+        message += "{} is in {}{} place w/ {} sparks\n".format(username, place, utils.num_suffix(place), sparks)
     await ctx.send(message)
 
 @bot.command()

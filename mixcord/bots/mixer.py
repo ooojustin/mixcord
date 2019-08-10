@@ -455,7 +455,7 @@ async def registered(message):
     user = api.get_user(message.user_id)
     registered = dateutil.parser.parse(user.createdAt)
     registered_str = registered.strftime("%B %Y day @ %I:%M %p (%Z)").lower()
-    registered_str = registered_str.replace("day", str(registered.day) + utils.day_suffix(registered.day))
+    registered_str = registered_str.replace("day", str(registered.day) + utils.num_suffix(registered.day))
     return registered_str
 
 # triggered when the mixer bot is connected + authenticated
