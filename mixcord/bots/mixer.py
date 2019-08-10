@@ -180,8 +180,8 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
 
             # determine winner/loser
             pick = random.randint(0, 1) == 1
-            winner_id = competitor.id if pick else message.user_id
-            loser_id = message.user_id if pick else  competitor.id
+            winner_id = user.id if pick else message.user_id
+            loser_id = message.user_id if pick else  user.id
             winner_username = username if pick else message.user_name
             loser_username = message.user_name if pick else username
 
@@ -309,7 +309,7 @@ async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
     mixcord_user = database.get_user(user.id)
     balance = 0 if mixcord_user is None else mixcord_user["balance"]
-    return "@{} has {} {}".format(username, balance, currency_name)
+    return "@{} has {} {}".format(user.username, balance, currency_name)
 
 @chat.commands
 async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NUMBER):

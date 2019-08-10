@@ -107,3 +107,8 @@ class MixerAPI:
         url = "{}/leaderboards/{}/channels/{}?limit={}".format(self.API_URL_V2, type, channel_id, limit)
         response = self.session.get(url)
         return response.json()
+
+    def get_chatters(self, channel_id):
+        url = "{}/chats/{}/users".format(self.API_URL_V2, channel_id)
+        response = self.session.get(url)
+        return response.json()
