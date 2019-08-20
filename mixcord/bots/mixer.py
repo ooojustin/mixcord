@@ -544,10 +544,10 @@ async def broadcast_triggered(packet, payload):
     if not "online" in payload: return
 
     if payload["online"]:
-        await send_announcement("{} is now online: https://mixer.com/{}".format(channel.token, channel.token))
-        await chat.send_message("@{} has gone online!".format(channel.token))
+        await send_announcement("{} is now online: https://mixer.com/{}".format(channel.username, channel.username))
+        await chat.send_message("@{} has gone online!".format(channel.username))
     else:
-        await chat.send_message("@{} has gone offline :(".format(channel.token))
+        await chat.send_message("@{} has gone offline :(".format(channel.username))
 
 # triggered when constellation websocket connection is established
 # this function should be used to subscribe to events
