@@ -321,7 +321,7 @@ async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NU
     if sender_mixcord is None:
         return "your mixer account must be linked to your discord via mixcord before sending balance."
     elif receiver_mixcord is None:
-        return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, username)
+        return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, user.username)
 
     amount = int(amount)
     if sender_mixcord["balance"] < amount:

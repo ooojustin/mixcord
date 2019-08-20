@@ -123,7 +123,7 @@ class MixerChat:
                         await self.chat.send_message("the '{}' parameter must be numeric.".format(param_names[i]))
                         return True
                     if param_object.annotation == ParamType.POSITIVE_NUMBER and parameters[i] <= 0:
-                        await self.chat.send_message("the '{}' parameter must be a positive number.".format(param_name))
+                        await self.chat.send_message("the '{}' parameter must be a positive number.".format(param_names[i]))
                         return True
                 elif param_object.annotation == ParamType.MIXER_USER:
                     if parameters[i][:1] != "@":
