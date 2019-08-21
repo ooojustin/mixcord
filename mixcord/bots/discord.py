@@ -32,7 +32,7 @@ async def leaderboard_jarks(ctx):
 
 @bot.command()
 async def link(ctx):
-    await ctx.send("https://mixer.com/" + channel.token)
+    await ctx.send("https://mixer.com/" + channel.username)
 
 @bot.command()
 async def leaderboard(ctx):
@@ -59,11 +59,11 @@ async def uptime(ctx):
     # get uptime and check if online
     uptime = channel.get_uptime()
     if uptime is None:
-        await ctx.send(channel.token + " is not currently online.")
+        await ctx.send(channel.username + " is not currently online.")
         return
 
     # return formatted uptime
-    await ctx.send(channel.token + " has been live for: " + str(uptime))
+    await ctx.send(channel.username + " has been live for: " + str(uptime))
 
 # triggered when the discord bot is connected + authenticated
 @bot.event

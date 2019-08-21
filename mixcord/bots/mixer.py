@@ -88,10 +88,10 @@ async def uptime(message):
     # get uptime and check if online
     uptime = channel.get_uptime()
     if uptime is None:
-        return channel.token + " is not currently online."
+        return channel.username + " is not currently online."
 
     # return formatted uptime
-    return channel.token + " has been live for: " + str(uptime)
+    return channel.username + " has been live for: " + str(uptime)
 
 @chat.commands
 async def ping(message):
