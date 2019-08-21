@@ -135,7 +135,10 @@ async def bet(message, amount):
         return "your mixer account must be linked to your discord via mixcord to use this command."
 
     # make sure they have sufficient balance
-    if amount == "all": amount = mixcord_user["balance"]
+    if amount == "all":
+        amount = mixcord_user["balance"]
+        if amount == 0:
+            return "amount must be a positive integer."
     else:
         amount = utils.get_positive_int(amount)
         if amount is None:
@@ -317,8 +320,10 @@ async def balance(message):
 async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
     mixcord_user = database.get_user(user.id)
-    balance = 0 if mixcord_user is None else mixcord_user["balance"]
-    return "@{} has {} {}".format(user.username, balance, currency_name)
+    if mixcord_user is not None:
+        return "@{} has {} {}".format(user.username, mixcord_user["balance"], currency_name)
+    else:
+        return "their mixer account must be linked to their discord before tracking balance."
 
 @chat.commands
 async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NUMBER):
