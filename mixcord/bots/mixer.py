@@ -400,6 +400,36 @@ async def jackpot(message):
     return response
 current_jackpot = None
 
+@chat.commands
+async def testauth(message):
+
+    shortcode = await api.get_shortcode(["user:details:self"])
+    code = shortcode["code"]
+    handle = shortcode["handle"]
+    authorization_code = None
+
+    # tell the user what to do to link their mixer account
+    link = "https://mixer.com/go?code=" + code
+    await chat.send_message("Visit the following link: " + link, message.username)
+
+    # poll shortcode checking endpoint with handle until we can move on with authorization_code
+    while not authorization_code:
+        await asyncio.sleep(10)
+        try:
+            response = await api.check_shortcode(handle)
+            authorization_code = response.get("code")
+        except MixerExceptions.WebException as ex:
+            if ex.status == 403:
+                await chat.send_message("Auth failed: permission denied.", message.username)
+                return
+            elif ex.status == 404:
+                await chat.send_message("Auth failed: verification timed out.", message.username)
+                return
+
+    auth = await MixerOAuth.create_from_authorization_code(api, authorization_code)
+    # we now have auth.username, auth.user_id, auth.refresh_token, auth.access_token, etc...
+    # store this in a database or something
+
 async def jackpot_end(duration):
 
     # countdown
