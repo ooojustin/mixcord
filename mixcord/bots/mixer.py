@@ -222,7 +222,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
     if amount is None: return "amount must be a positive integer."
 
     # make sure they're not trying to start a bet against themself :/
-    if message.user_name == username:
+    if message.username == username:
         return "you're not able to start a bet against yourself."
 
     # make sure we don't already have a pending bet
@@ -463,11 +463,11 @@ async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
 
     current_jackpot["total"] += amount
     database.add_balance(message.user_id, -amount)
-    if message.user_name in current_jackpot["users"]:
-        current_jackpot["users"][message.user_name]["amount"] += amount
-        return "you have deposited an additional {} {} to total {} this pot.".format(amount, currency_name, current_jackpot["users"][message.user_name]["amount"])
+    if message.username in current_jackpot["users"]:
+        current_jackpot["users"][message.username]["amount"] += amount
+        return "you have deposited an additional {} {} to total {} this pot.".format(amount, currency_name, current_jackpot["users"][message.username]["amount"])
     else:
-        current_jackpot["users"][message.user_name] = {
+        current_jackpot["users"][message.username] = {
             "id": message.user_id,
             "amount": amount
         }
@@ -529,10 +529,10 @@ async def handle_message(message):
         if skill["currency"] == "Sparks":
             reward = int(skill["cost"] / 10)
             database.add_balance(message.user_id, reward)
-            await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), message.user_name)
+            await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), message.username)
 
     current_time = time()
-    last_reward = last_rewards.get(message.user_name, 0)
+    last_reward = last_rewards.get(message.username, 0)
     if current_time - last_reward >= 5 and not message.handled:
         database.add_balance(message.user_id, 5)
         last_rewards[message.user_name] = current_time
