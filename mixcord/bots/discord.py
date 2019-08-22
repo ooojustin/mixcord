@@ -81,7 +81,7 @@ async def mixcord(ctx):
         return
 
     # get shortcode stuff from mixer
-    shortcode = api.get_shortcode()
+    shortcode = await api.get_shortcode()
     code = shortcode["code"]
     handle = shortcode["handle"]
 
@@ -91,7 +91,7 @@ async def mixcord(ctx):
     # poll shortcode checking endpoint with handle until we can move on with authorization_code
     while True:
         await asyncio.sleep(10)
-        response = api.check_shortcode(handle)
+        response = await api.check_shortcode(handle)
         status_code = response.status_code
         if status_code == 200:
             authorization_code = response.json()["code"]
@@ -103,9 +103,9 @@ async def mixcord(ctx):
             await ctx.author.send("Failed: verification timed out.")
             return
 
-    tokens = api.get_token(authorization_code)
-    token_data = api.check_token(tokens["access_token"])
-    user = api.get_user(token_data["sub"])
+    tokens = await api.get_token(authorization_code)
+    token_data = await api.check_token(tokens["access_token"])
+    user = await api.get_user(token_data["sub"])
 
     database.insert_user(user.id, user.channel.id, discord_id)
     database.update_tokens(discord_id, tokens["access_token"], tokens["refresh_token"], token_data["exp"], database.IDType.DISCORD)

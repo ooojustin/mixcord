@@ -98,7 +98,7 @@ async def uptime(message):
     """Displays how long the streamer has been live for."""
 
     # get uptime and check if online
-    uptime = channel.get_uptime()
+    uptime = await channel.get_uptime()
     if uptime is None:
         return channel.username + " is not currently online."
 
@@ -171,7 +171,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
     """Challenge another member to a 50/50 coin flip! Winner takes the losers bet."""
 
     username = user.username.lower()
-    message.user_name = message.user_name.lower()
+    username_sender = message.username.lower()
 
     mixcord_user = database.get_user(message.user_id)
 
@@ -180,7 +180,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
 
         # get the pending bet
         bet = pending_bets.get(username)
-        if bet is None or bet["username"] != message.user_name:
+        if bet is None or bet["username"] != username_sender:
             return "failed to find the bet you're responding to."
 
         # delete the pending bet, because we're handling it
@@ -206,8 +206,8 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
             pick = random.randint(0, 1) == 1
             winner_id = user.id if pick else message.user_id
             loser_id = message.user_id if pick else  user.id
-            winner_username = username if pick else message.user_name
-            loser_username = message.user_name if pick else username
+            winner_username = username if pick else username_sender
+            loser_username = message.username if pick else username
 
             # affect balances accordingly
             database.add_balance(winner_id, bet["amount"])
@@ -226,7 +226,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
         return "you're not able to start a bet against yourself."
 
     # make sure we don't already have a pending bet
-    if pending_bets.get(message.user_name) is not None:
+    if pending_bets.get(message.username) is not None:
         return "you already have a pending bet."
 
     # make sure the challenger has enough money to start the bet
@@ -234,15 +234,15 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
         return "you have insufficient funds to request this bet."
 
     # store challenge information
-    pending_bets[message.user_name] = {
+    pending_bets[message.username] = {
         "username": username,
         "amount": amount
     }
 
     # send messages indicating the challenge has been issued
-    await chat.send_message("@{} has challenged @{} to a bet of {} {}!".format(message.user_name, username, amount, currency_name))
+    await chat.send_message("@{} has challenged @{} to a bet of {} {}!".format(message.username, username, amount, currency_name))
     await asyncio.sleep(0.5)
-    await chat.send_message("use {}bet @{} [accept/deny] to respond to your pending bet!".format(chat.commands.prefix, message.user_name), username)
+    await chat.send_message("use {}bet @{} [accept/deny] to respond to your pending bet!".format(chat.commands.prefix, message.username), username)
 
     # automatically timeout the bet in 30 seconds
     async def bet_timeout(username):
@@ -251,7 +251,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
         if bet is not None:
             del pending_bets[username]
             await chat.send_message("@{} your pending bet has timed out.".format(username))
-    asyncio.ensure_future(bet_timeout(message.user_name))
+    asyncio.ensure_future(bet_timeout(message.username))
 pending_bets = dict()
 
 @chat.commands
@@ -378,7 +378,7 @@ async def jackpot(message):
     if current_jackpot is None:
         return "a jackpot is not currently running."
 
-    user = current_jackpot["users"].get(message.user_name) # users entry in jackpot
+    user = current_jackpot["users"].get(message.username) # users entry in jackpot
     response = "a jackpot is active with {} competitors and a total of {} {}!".format(len(current_jackpot["users"]), current_jackpot["total"], currency_name)
 
     if user is not None:
@@ -393,8 +393,9 @@ current_jackpot = None
 async def jackpot_end(duration):
 
     # countdown
-    await asyncio.sleep(duration - 3)
-    for i in range(3, 0, -1):
+    countdown = 3
+    await asyncio.sleep(duration - countdown)
+    for i in range(countdown, 0, -1):
         await chat.send_message("jackpot ends in {} seconds...".format(i))
         await asyncio.sleep(1)
 
@@ -440,8 +441,9 @@ async def jackpot_start(message, duration):
         "users": dict()
     }
 
-    # set a timeout for ending the jackpot
-    asyncio.ensure_future(jackpot_end(duration))
+    # create a task to automatically end the jackpot and return
+    coro = jackpot_end(duration)
+    asyncio.create_task(coro)
     return "jackpot has been started! it will end in {} seconds...".format(duration)
 
 @chat.commands
