@@ -12,7 +12,6 @@ from __main__ import settings as settings_all
 settings = settings_all["mixer"]
 currency_name = settings_all["mixcord"]["currency_name"]
 
-
 # TODO: the mixer module will *eventually* be installed via pypi
 # i am temporarily spcifying the path during development of the wrapper
 sys.path.append(R"C:\Users\justi\Documents\Programming\mixer.py")
@@ -35,9 +34,20 @@ async def init():
         import init_oauth
         await init_oauth.run()
 
+    # function to update tokens saved in settings file
+    def update_tokens(access_token, refresh_token):
+        settings_all["mixer"]["access_token"] = access_token
+        settings_all["mixer"]["refresh_token"] = refresh_token
+        settings_cfg = json.dumps(settings_all, indent = 4)
+        utils.write_all_text("settings.cfg", settings_cfg)
+        print("access_token and refresh_token have been updated automatically.")
+
     # initialize general mixer api wrapper and oauth manager
     api = MixerAPI(settings["client-id"], settings["client-secret"])
-    auth = MixerOAuth(api, settings["access_token"], settings["refresh_token"])
+    auth = await MixerOAuth.create(api, settings["access_token"], settings["refresh_token"])
+    auth.on_refresh(update_tokens)
+    await auth.ensure_active()
+    auth.register_auto_refresh()
 
     # initialize chatbot
     try:
@@ -535,7 +545,7 @@ async def handle_message(message):
     last_reward = last_rewards.get(message.username, 0)
     if current_time - last_reward >= 5 and not message.handled:
         database.add_balance(message.user_id, 5)
-        last_rewards[message.user_name] = current_time
+        last_rewards[message.username] = current_time
 last_rewards = dict()
 
 async def follow_triggered(packet, payload):
@@ -586,12 +596,3 @@ async def constellation_connected(constellation):
 
 # initialize constellation manager w/ connected callback
 constellation = MixerConstellation(constellation_connected)
-
-# add event to update settings file when tokens are refreshed
-def update_tokens(access_token, refresh_token):
-    settings_all["mixer"]["access_token"] = access_token
-    settings_all["mixer"]["refresh_token"] = refresh_token
-    settings_cfg = json.dumps(settings_all, indent = 4)
-    utils.write_all_text("settings.cfg", settings_cfg)
-    print("access_token and refresh_token have been updated automatically.")
-auth.on_refresh(update_tokens)
