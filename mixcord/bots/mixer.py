@@ -13,10 +13,11 @@ settings = settings_all["mixer"]
 currency_name = settings_all["mixcord"]["currency_name"]
 
 
-# NOTE: the mixer module will *eventually* be installed via pypi
+# TODO: the mixer module will *eventually* be installed via pypi
 # i am temporarily spcifying the path during development of the wrapper
 sys.path.append(R"C:\Users\justi\Documents\Programming\mixer.py")
 
+# mixer imports
 import mixer.exceptions as MixerExceptions
 from mixer.api import MixerAPI
 from mixer.constellation import MixerConstellation
@@ -24,23 +25,34 @@ from mixer.oauth import MixerOAuth
 from mixer.chat import MixerChat
 ParamType = MixerChat.ParamType
 
-# initialize chatbot with oauth tokens if needed
-if not "access_token" in settings:
-    import init_oauth
+async def init():
 
-# initialize general mixer api wrapper and oauth manager
-api = MixerAPI(settings["client-id"], settings["client-secret"])
-auth = MixerOAuth(api, settings["access_token"], settings["refresh_token"])
+    # variables we're setting in the mixer module
+    global api, auth, channel, chat
 
-# initialize chatbot
-try:
-    channel = api.get_channel(settings["username"])
-    chat = MixerChat(api, channel.id, command_prefix = ">")
-except MixerExceptions.NotFound:
-    print("invalid account username specified in settings file.")
-    sys.exit(1)
+    # initialize chatbot with oauth tokens if needed
+    if not "access_token" in settings:
+        import init_oauth
+        await init_oauth.run()
 
-# import discord bot from bots.discord module
+    # initialize general mixer api wrapper and oauth manager
+    api = MixerAPI(settings["client-id"], settings["client-secret"])
+    auth = MixerOAuth(api, settings["access_token"], settings["refresh_token"])
+
+    # initialize chatbot
+    try:
+        channel = await api.get_channel(settings["username"])
+        chat = await MixerChat.create(api, channel.id, command_prefix = ">")
+    except MixerExceptions.NotFound:
+        print("invalid account username specified in settings file.")
+        sys.exit(1)
+
+# run initialization code
+# NOTE: this must be done before importing discord
+loop = asyncio.get_event_loop()
+loop.run_until_complete(init())
+
+# discord imports (note: should be imported after init)
 from bots.discord import send_announcement
 from bots.discord import bot as discord
 
