@@ -10,7 +10,7 @@ from __main__ import settings
 
 async def run():
 
-    mixer = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
+    api = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
 
     scope = [
     "chat:bypass_catbot", "chat:bypass_filter", "chat:bypass_links",
@@ -21,7 +21,7 @@ async def run():
     "chat:remove_message", "chat:timeout", "chat:view_deleted",
     "chat:whisper"]
 
-    shortcode = await mixer.get_shortcode(scope)
+    shortcode = await api.get_shortcode(scope)
     authorization_code = None
 
     url = "https://mixer.com/go?code=" + shortcode["code"]
@@ -30,7 +30,7 @@ async def run():
     while not authorization_code:
         await asyncio.sleep(10)
         try:
-            response = await mixer.check_shortcode(shortcode["handle"])
+            response = await api.check_shortcode(shortcode["handle"])
             authorization_code = response["code"]
             print("Authorization Code:", authorization_code)
         except MixerExceptions.WebException as ex:
@@ -42,7 +42,7 @@ async def run():
                 print("Timed out.")
                 return False
 
-    tokens = await mixer.get_token(authorization_code)
+    tokens = await api.get_token(authorization_code)
     print("Access Token:", tokens["access_token"])
     print("Refresh Token:", tokens["refresh_token"])
 
@@ -51,3 +51,5 @@ async def run():
 
     data_raw = json.dumps(settings, indent = 4)
     utils.write_all_text("settings.cfg", data_raw)
+
+    await api.close()
