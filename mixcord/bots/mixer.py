@@ -405,8 +405,13 @@ async def jackpot(message):
 current_jackpot = None
 
 @chat.commands
-async def testauth(message):
+async def link(message):
 
+    # make sure they're not already linked
+    if await database.get_user(message.user_id):
+        return "your mixer account is already linked to mixcord."
+
+    # begin shortcode oauth process
     shortcode = await api.get_shortcode(["user:details:self"])
     code = shortcode["code"]
     handle = shortcode["handle"]
@@ -415,6 +420,8 @@ async def testauth(message):
     # tell the user what to do to link their mixer account
     link = "https://mixer.com/go?code=" + code
     await chat.send_message("Visit the following link: " + link, message.username)
+    await asyncio.sleep(0.5)
+    await chat.send_message("@{} i've whispered a super secret link to you.".format(message.username))
 
     # poll shortcode checking endpoint with handle until we can move on with authorization_code
     while not authorization_code:
@@ -431,8 +438,13 @@ async def testauth(message):
                 return
 
     auth = await MixerOAuth.create_from_authorization_code(api, authorization_code)
-    # we now have auth.username, auth.user_id, auth.refresh_token, auth.access_token, etc...
-    # store this in a database or something
+    user = await api.get_user(auth.user_id)
+    discord = await api.get_user_service("discord", auth)
+
+    await database.insert_user(user.id, user.channel.id, discord)
+    await database.update_tokens(user.id, auth.access_token, auth.refresh_token)
+    await chat.send_message("your mixer account has been linked!")
+
 
 async def jackpot_end(duration):
 
@@ -569,16 +581,16 @@ async def user_joined(data):
 async def handle_message(message):
 
     skill = message.skill
-    if database.get_user(message.user_id) is not None and skill is not None:
+    if await database.get_user(message.user_id) is not None and skill is not None:
         if skill["currency"] == "Sparks":
             reward = int(skill["cost"] / 10)
-            database.add_balance(message.user_id, reward)
+            await database.add_balance(message.user_id, reward)
             await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), message.username)
 
     current_time = time()
     last_reward = last_rewards.get(message.username, 0)
     if current_time - last_reward >= 5 and not message.handled:
-        database.add_balance(message.user_id, 5)
+        await database.add_balance(message.user_id, 5)
         last_rewards[message.username] = current_time
 last_rewards = dict()
 
@@ -592,11 +604,11 @@ async def skill_triggered(packet, payload):
 
     # announce skill in chat
     user_id = payload["triggeringUserId"]
-    user = api.get_user(user_id)
+    user = await api.get_user(user_id)
     await chat.send_message("@{} just used a whopping {} {}".format(user.username, payload["price"], payload["currencyType"].lower()))
 
     # reward them with balance (sparks / 10)
-    if database.get_user(user_id) is not None and payload["currencyType"] == "Sparks":
+    if await database.get_user(user_id) is not None and payload["currencyType"] == "Sparks":
         reward = int(payload["price"] / 10)
         database.add_balance(user_id, reward)
         await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), user.username)
