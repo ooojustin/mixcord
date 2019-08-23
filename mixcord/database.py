@@ -55,7 +55,7 @@ async def get_user(id, id_type = "id"):
     return await cursor.fetchone()
 
 async def insert_user(user_id, channel_id, discord_id = None):
-    query = "INSERT INTO users (id, channel_id, discord_id) VALUES (?, ?, ?)"
+    query = "INSERT INTO users (id, channel, discord) VALUES (?, ?, ?)"
     params = (user_id, channel_id, discord_id)
     await cursor.execute(query, params)
 
