@@ -6,7 +6,6 @@ import logging
 log = logging.getLogger("discord")
 
 from __main__ import settings, database
-from database import cursor as db_cursor
 import discord, asyncio, json, utils
 from discord.ext import commands
 
@@ -33,23 +32,23 @@ async def link(ctx):
 
 @bot.command()
 async def leaderboard_jarks(ctx):
-    db_cursor.execute("SELECT * FROM mixcord ORDER BY balance DESC LIMIT 10")
-    data = db_cursor.fetchall()
+    data = await database._fetchall("SELECT * FROM users ORDER BY balance DESC LIMIT 10")
     message = ""
     for i in range(len(data)):
         row = data[i]
         place = i + 1
-        member = bot.get_user(row["discord_id"])
-        if not member is None:
+        member = await bot.fetch_user(row["discord"])
+        if member is not None:
             username = member.mention
         else:
-            username = "**{}**".format(api.get_user(row["user_id"]).username)
+            user = await api.get_user(row["id"])
+            username = "**{}**".format(user.username)
         message += "{} is in {}{} place w/ {} jarks\n".format(username, place, utils.num_suffix(place), row["balance"])
     await ctx.send(message)
 
 @bot.command()
 async def leaderboard(ctx):
-    leaderboard = channel.get_leaderboard('sparks-weekly')
+    leaderboard = await channel.get_leaderboard('sparks-weekly')
     message = ""
     for i in range(len(leaderboard)):
         leader = leaderboard[i]
@@ -57,9 +56,9 @@ async def leaderboard(ctx):
         username = leader["username"]
         sparks = leader["statValue"]
         place = i + 1
-        mixcord_user = database.get_user(user_id)
+        mixcord_user = await database.get_user(user_id)
         if mixcord_user is not None:
-            member = bot.get_user(mixcord_user["discord_id"])
+            member = bot.get_user(mixcord_user["discord"])
             username = "**{}**".format(username) if member is None else member.mention
         else:
             username = "**{}**".format(username)
