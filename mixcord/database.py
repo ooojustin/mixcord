@@ -1,60 +1,37 @@
-import sqlite3
+import asyncio
+import aiosqlite
 from enum import Enum
 
-# database initialization
-db = sqlite3.connect('mixcord.db')
-db.row_factory = sqlite3.Row # fetched rows will have values mapped to column names
-db.isolation_level = None # automatically commit changes to db
-cursor = db.cursor()
+db = None
+cursor = None
+loop = asyncio.get_event_loop()
 
 class IDType(Enum):
     USER = 1
     CHANNEL = 2
     DISCORD = 3
 
-def column_from_type(id_type):
-    columns = {
-        IDType.USER: "user_id",
-        IDType.CHANNEL: "channel_id",
-        IDType.DISCORD: "discord_id"
-    }
-    id_type = IDType(id_type)
-    return columns.get(id_type)
+async def _init():
 
-def insert_user(user_id, channel_id, discord_id):
-    query = "INSERT INTO mixcord (user_id, channel_id, discord_id) VALUES (?, ?, ?)"
-    params = (user_id, channel_id, discord_id)
-    cursor.execute(query, params)
+    # initialize db/cursor
+    global db, cursor
+    db = await aiosqlite.connect("mixcord.db",
+        loop = loop,
+        isolation_level = None
+    )
+    db.row_factory = aiosqlite.Row # ??? maybe
+    cursor = await db.cursor()
 
-def update_tokens(id, access_token, refresh_token, expires, id_type = 1):
-    column = column_from_type(id_type)
-    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE {} = ?".format(column)
-    params = (access_token, refresh_token, expires, id)
-    cursor.execute(query, params)
-
-def add_balance(id, amount, id_type = 1):
-    column = column_from_type(id_type)
-    query = "UPDATE mixcord SET balance = balance + ? WHERE {} = ?".format(column)
-    params = (amount, id)
-    cursor.execute(query, params)
-
-def get_user(id, id_type = 1):
-    column = column_from_type(id_type)
-    query = "SELECT * FROM mixcord WHERE {} = ?".format(column)
-    cursor.execute(query, (id,))
-    return cursor.fetchone()
-
-def init():
-
-    def table_exists(name):
+    # func to check if a table exists
+    async def table_exists(name):
         query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
         params = (name,)
-        cursor.execute(query, params)
-        return cursor.fetchone() is not None
+        await cursor.execute(query, params)
+        return await cursor.fetchone()
 
     # create the mixcord table, if it doesnt exist
-    if not table_exists("mixcord"):
-        cursor.execute("""
+    if not await table_exists("mixcord"):
+        await cursor.execute("""
         CREATE TABLE "mixcord" (
         	"id"	INTEGER PRIMARY KEY AUTOINCREMENT,
         	"user_id"	INTEGER UNIQUE,
@@ -66,3 +43,38 @@ def init():
         	"expires"	INTEGER DEFAULT 0
         )
         """)
+
+def column_from_type(id_type):
+    columns = {
+        IDType.USER: "user_id",
+        IDType.CHANNEL: "channel_id",
+        IDType.DISCORD: "discord_id"
+    }
+    id_type = IDType(id_type)
+    return columns.get(id_type)
+
+async def get_user(id, id_type = 1):
+    column = column_from_type(id_type)
+    query = "SELECT * FROM mixcord WHERE {} = ?".format(column)
+    await cursor.execute(query, (id,))
+    return await cursor.fetchone()
+
+async def insert_user(user_id, channel_id, discord_id):
+    query = "INSERT INTO mixcord (user_id, channel_id, discord_id) VALUES (?, ?, ?)"
+    params = (user_id, channel_id, discord_id)
+    await cursor.execute(query, params)
+
+async def update_tokens(id, access_token, refresh_token, expires, id_type = 1):
+    column = column_from_type(id_type)
+    query = "UPDATE mixcord SET access_token = ?, refresh_token = ?, expires = ? WHERE {} = ?".format(column)
+    params = (access_token, refresh_token, expires, id)
+    await cursor.execute(query, params)
+
+async def add_balance(id, amount, id_type = 1):
+    column = column_from_type(id_type)
+    query = "UPDATE mixcord SET balance = balance + ? WHERE {} = ?".format(column)
+    params = (amount, id)
+    await cursor.execute(query, params)
+
+def init():
+    loop.run_until_complete(_init())
