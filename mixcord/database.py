@@ -3,7 +3,6 @@ import aiosqlite
 from enum import Enum
 
 db = None
-cursor = None
 loop = asyncio.get_event_loop()
 
 # <editor-fold> ID Types
@@ -19,24 +18,23 @@ idtype_column = lambda x: x.value if isinstance(x, IDType) else x
 async def _init():
 
     # initialize db/cursor
-    global db, cursor
+    global db
     db = await aiosqlite.connect("mixcord.db",
         loop = loop,
         isolation_level = None
     )
     db.row_factory = aiosqlite.Row # ??? maybe
-    cursor = await db.cursor()
 
     # func to check if a table exists
     async def table_exists(name):
         query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
         params = (name,)
-        await cursor.execute(query, params)
-        return await cursor.fetchone()
+        async with db.execute(query, params) as cursor:
+            return await cursor.fetchone()
 
     # create the mixcord table, if it doesnt exist
     if not await table_exists("users"):
-        await cursor.execute("""
+        await db.execute("""
             CREATE TABLE "users" (
             	"id"	INTEGER NOT NULL UNIQUE,
             	"channel"	INTEGER NOT NULL UNIQUE,
@@ -48,28 +46,35 @@ async def _init():
             );
         """)
 
+async def _fetchone(query, params = None):
+    async with db.execute(query, params) as cursor:
+        return await cursor.fetchone()
+
+async def _fetchall(query, params = None):
+    async with db.execute(query, params) as cursor:
+        return await cursor.fetchall()
+
 async def get_user(id, id_type = "id"):
     column = idtype_column(id_type)
-    query = "SELECT * FROM users WHERE {} = ?".format(column)
-    await cursor.execute(query, (id,))
-    return await cursor.fetchone()
+    query = f"SELECT * FROM users WHERE {column} = ?"
+    return await _fetchone(query, [id])
 
 async def insert_user(user_id, channel_id, discord_id = None):
     query = "INSERT INTO users (id, channel, discord) VALUES (?, ?, ?)"
-    params = (user_id, channel_id, discord_id)
-    await cursor.execute(query, params)
+    params = [user_id, channel_id, discord_id]
+    await db.execute(query, params)
 
 async def update_tokens(id, access_token, refresh_token, id_type = "id"):
     column = idtype_column(id_type)
-    query = "UPDATE users SET access_token = ?, refresh_token = ? WHERE {} = ?".format(column)
+    query = f"UPDATE users SET access_token = ?, refresh_token = ? WHERE {column} = ?"
     params = (access_token, refresh_token, id)
-    await cursor.execute(query, params)
+    await db.execute(query, params)
 
 async def add_balance(id, amount, id_type = "id"):
     column = idtype_column(id_type)
-    query = "UPDATE users SET balance = balance + ? WHERE {} = ?".format(column)
+    query = f"UPDATE users SET balance = balance + ? WHERE {column} = ?"
     params = (amount, id)
-    await cursor.execute(query, params)
+    await db.execute(query, params)
 
 def init():
     loop.run_until_complete(_init())
