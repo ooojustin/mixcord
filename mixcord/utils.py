@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # funcs to get item at index in a list, or first item in list
 # both return 'None' if item doesnt exist
 at_index = lambda l, i: l[i] if len(l) > i else None
@@ -25,3 +27,7 @@ def write_all_text(file, text):
     file = open(file, "w")
     file.write(text)
     file.close()
+
+def get_file_name(path, include_extension = True):
+    path = Path(path).resolve()
+    return path.name if include_extension else path.stem

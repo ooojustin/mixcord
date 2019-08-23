@@ -12,6 +12,7 @@ class IDType(Enum):
     CHANNEL = "channel"
     DISCORD = "discord"
 
+# if it's an IDType, get the value - otherise, just use the string
 idtype_column = lambda x: x.value if isinstance(x, IDType) else x
 # </editor-fold>
 
