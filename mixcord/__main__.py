@@ -8,12 +8,13 @@ settings = json.loads(settings_raw)
 import database
 database.init()
 
-# logging initialization
-import logging
-logging.basicConfig(level = logging.INFO)
-
 import bots.mixer
 import bots.discord
+
+# logging initialization
+import logging
+bots.mixer.log.setLevel(logging.ERROR)
+bots.discord.log.setLevel(logging.ERROR)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(asyncio.gather(

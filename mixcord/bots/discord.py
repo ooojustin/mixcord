@@ -1,6 +1,10 @@
 import sys
 sys.path.append("..")
 
+# logging initialization
+import logging
+log = logging.getLogger("discord")
+
 from __main__ import settings, database
 from database import cursor as db_cursor
 import discord, asyncio, json, utils

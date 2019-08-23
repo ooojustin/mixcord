@@ -1,7 +1,11 @@
 import sys
 sys.path.append("..")
 
-import random, utils, json, asyncio, os, requests
+# logging initialization
+import logging
+log = logging.getLogger("mixer")
+
+import random, json, asyncio, os, requests, utils
 from threading import Timer
 from time import time
 import dateutil.parser
