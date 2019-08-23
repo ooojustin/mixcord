@@ -18,6 +18,19 @@ from bots.mixer import channel as channel
 # initialize discord bot
 bot = commands.Bot(command_prefix = '>')
 
+async def send_announcement(message):
+    guild = bot.get_guild(settings["discord"]["guild"])
+    channel = discord.utils.get(guild.text_channels, name = "announcements")
+    await channel.send("@everyone " + message)
+
+@bot.event
+async def on_ready():
+    print('discord logged in:', bot.user)
+
+@bot.command()
+async def link(ctx):
+    await ctx.send("https://mixer.com/" + channel.username)
+
 @bot.command()
 async def leaderboard_jarks(ctx):
     db_cursor.execute("SELECT * FROM mixcord ORDER BY balance DESC LIMIT 10")
@@ -33,10 +46,6 @@ async def leaderboard_jarks(ctx):
             username = "**{}**".format(api.get_user(row["user_id"]).username)
         message += "{} is in {}{} place w/ {} jarks\n".format(username, place, utils.num_suffix(place), row["balance"])
     await ctx.send(message)
-
-@bot.command()
-async def link(ctx):
-    await ctx.send("https://mixer.com/" + channel.username)
 
 @bot.command()
 async def leaderboard(ctx):
@@ -68,13 +77,3 @@ async def uptime(ctx):
 
     # return formatted uptime
     await ctx.send(channel.username + " has been live for: " + str(uptime))
-
-# triggered when the discord bot is connected + authenticated
-@bot.event
-async def on_ready():
-    print('discord logged in:', bot.user)
-
-async def send_announcement(message):
-    guild = bot.get_guild(settings["discord"]["guild"])
-    channel = discord.utils.get(guild.text_channels, name = "announcements")
-    await channel.send("@everyone " + message)
