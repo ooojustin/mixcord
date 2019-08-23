@@ -44,7 +44,6 @@ async def _init():
             	"discord"	INTEGER DEFAULT NULL,
             	"access_token"	TEXT DEFAULT NULL,
             	"refresh_token"	TEXT DEFAULT NULL,
-            	"expires"	INTEGER DEFAULT NULL,
             	PRIMARY KEY("id")
             );
         """)
@@ -60,10 +59,10 @@ async def insert_user(user_id, channel_id, discord_id = None):
     params = (user_id, channel_id, discord_id)
     await cursor.execute(query, params)
 
-async def update_tokens(id, access_token, refresh_token, expires, id_type = "id"):
+async def update_tokens(id, access_token, refresh_token, id_type = "id"):
     column = idtype_column(id_type)
-    query = "UPDATE users SET access_token = ?, refresh_token = ?, expires = ? WHERE {} = ?".format(column)
-    params = (access_token, refresh_token, expires, id)
+    query = "UPDATE users SET access_token = ?, refresh_token = ? WHERE {} = ?".format(column)
+    params = (access_token, refresh_token, id)
     await cursor.execute(query, params)
 
 async def add_balance(id, amount, id_type = "id"):
