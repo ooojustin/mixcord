@@ -534,24 +534,12 @@ async def registered(message):
     registered_str = registered_str.replace("day", str(registered.day) + utils.num_suffix(registered.day))
     return registered_str
 
-        "players": chatters
-    }
-
-    # TODO: make this work?
-    async def hotpotato_next():
-        pass
-        # await asyncio.sleep(random.randint(1, 1))
-
-    asyncio.ensure_future(hotpotato_next())
-hotpotato = None
-
 # triggered when the mixer bot is connected + authenticated
 @chat
 async def on_ready(username, user_id): #
     print("mixer logged in: {} (uid = {})".format(username, user_id))
     await chat.send_message("mixcord logged in successfully!")
 
-# TODO: force user to leave game of hotpotato
 # triggered when a user joins the stream
 @chat
 async def user_joined(data):
