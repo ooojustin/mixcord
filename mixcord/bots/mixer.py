@@ -8,7 +8,6 @@ log = logging.getLogger("mixer")
 import random, json, asyncio, os, utils
 from threading import Timer
 from time import time
-import dateutil.parser
 
 from __main__ import database
 from __main__ import settings as settings_all
@@ -528,10 +527,9 @@ async def discord(message):
 @chat.commands
 async def registered(message):
     """Tells a used when they registered on Mixer."""
-    user = api.get_user(message.user_id)
-    registered = dateutil.parser.parse(user.createdAt)
-    registered_str = registered.strftime("%B %Y day @ %I:%M %p (%Z)").lower()
-    registered_str = registered_str.replace("day", str(registered.day) + utils.num_suffix(registered.day))
+    created = (await api.get_user(message.user_id)).created_at
+    registered_str = created.strftime("%B %Y day @ %I:%M %p (%Z)").lower()
+    registered_str = registered_str.replace("day", str(created.day) + utils.num_suffix(created.day))
     return registered_str
 
 # triggered when the mixer bot is connected + authenticated
