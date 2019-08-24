@@ -1,4 +1,5 @@
 from pathlib import Path
+import aiohttp
 
 # funcs to get item at index in a list, or first item in list
 # both return 'None' if item doesnt exist
@@ -31,3 +32,11 @@ def write_all_text(file, text):
 def get_file_name(path, include_extension = True):
     path = Path(path).resolve()
     return path.name if include_extension else path.stem
+
+async def get_btc_prices():
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://blockchain.info/ticker") as response:
+                return await response.json()
+    except:
+        return None
