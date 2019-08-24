@@ -577,7 +577,7 @@ async def skill_triggered(packet, payload):
     # reward them with balance (sparks / 10)
     if await database.get_user(user_id) is not None and payload["currencyType"] == "Sparks":
         reward = int(payload["price"] / 10)
-        database.add_balance(user_id, reward)
+        await database.add_balance(user_id, reward)
         await chat.send_message("thanks for using sparks! you've received {} {} as a reward.".format(reward, currency_name), user.username)
 
 
