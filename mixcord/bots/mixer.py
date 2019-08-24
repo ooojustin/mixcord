@@ -156,7 +156,7 @@ async def bet(message, amount):
     """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
 
     # make sure their discord account is linked
-    mixcord_user = database.get_user(message.user_id)
+    mixcord_user = await database.get_user(message.user_id)
     if mixcord_user is None:
         return "your mixer account must be linked to your discord via mixcord to use this command."
 
@@ -187,7 +187,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
     username = user.username.lower()
     username_sender = message.username.lower()
 
-    mixcord_user = database.get_user(message.user_id)
+    mixcord_user = await database.get_user(message.user_id)
 
     # handle if somebody is trying to accept or deny
     if amount == "accept" or amount == "deny":
@@ -212,7 +212,7 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
                 return "you have insufficient funds to accept this bet."
 
             # make sure the issuer of the challenge still has enough money
-            competitor_mixcord_user = database.get_user(user.id)
+            competitor_mixcord_user = await database.get_user(user.id)
             if bet["amount"] > competitor_mixcord_user["balance"]:
                 return "@{} no longer has sufficient funding to run this bet.".format(username)
 
@@ -224,8 +224,8 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
             loser_username = message.username if pick else username
 
             # affect balances accordingly
-            database.add_balance(winner_id, bet["amount"])
-            database.add_balance(loser_id, -bet["amount"])
+            await database.add_balance(winner_id, bet["amount"])
+            await database.add_balance(loser_id, -bet["amount"])
 
             # end the bet!
             await chat.send_message("@{} has won {} {}! better luck next time, @{}.".format(winner_username, bet["amount"], currency_name, loser_username))
@@ -259,13 +259,11 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
     await chat.send_message("use {}bet @{} [accept/deny] to respond to your pending bet!".format(chat.commands.prefix, message.username), username)
 
     # automatically timeout the bet in 30 seconds
-    async def bet_timeout(username):
-        await asyncio.sleep(30)
-        bet = pending_bets.get(username)
-        if bet is not None:
-            del pending_bets[username]
-            await chat.send_message("@{} your pending bet has timed out.".format(username))
-    asyncio.ensure_future(bet_timeout(message.username))
+    await asyncio.sleep(30)
+    bet = pending_bets.get(message.username)
+    if bet is not None:
+        del pending_bets[message.username]
+        await chat.send_message("@{} your pending bet has timed out.".format(message.username))
 pending_bets = dict()
 
 @chat.commands
@@ -443,7 +441,6 @@ async def link(message):
     await database.update_tokens(user.id, auth.access_token, auth.refresh_token)
     await chat.send_message("your mixer account has been linked!")
 
-
 async def jackpot_end(duration):
 
     # countdown
@@ -474,17 +471,14 @@ async def jackpot_end(duration):
     await chat.send_message("@{} won the jackpot with a {}% chance! total: {} {}".format(winner["username"], chance, current_jackpot["total"], currency_name))
 
     # add balance to user and end current jackpot
-    database.add_balance(winner["id"], current_jackpot["total"])
+    await database.add_balance(winner["id"], current_jackpot["total"])
     current_jackpot = None
 
 @chat.commands
-async def jackpot_start(message, duration):
+async def jackpot_start(message, duration: ParamType.POSITIVE_NUMBER):
 
     if not message.has_role("Owner"):
         return "only the stream owner can start a jackpot."
-
-    duration = utils.get_positive_int(duration)
-    if duration is None: return "please enter a valid jackput duration in seconds."
 
     # start a jackpot
     global current_jackpot
@@ -497,7 +491,7 @@ async def jackpot_start(message, duration):
 
     # create a task to automatically end the jackpot and return
     coro = jackpot_end(duration)
-    asyncio.create_task(coro)
+    asyncio.ensure_future(coro)
     return "jackpot has been started! it will end in {} seconds...".format(duration)
 
 @chat.commands
@@ -505,7 +499,7 @@ async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
     """Deposits specified amount of balance into the current jackpot."""
 
     amount = int(amount)
-    mixcord_user = database.get_user(message.user_id)
+    mixcord_user = await database.get_user(message.user_id)
     if mixcord_user is None:
         return "your discord must be linked to your mixer via mixcord to participate in jackpots."
 
@@ -516,7 +510,7 @@ async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
         return "no jackpot is currently running."
 
     current_jackpot["total"] += amount
-    database.add_balance(message.user_id, -amount)
+    await database.add_balance(message.user_id, -amount)
     if message.username in current_jackpot["users"]:
         current_jackpot["users"][message.username]["amount"] += amount
         return "you have deposited an additional {} {} to total {} this pot.".format(amount, currency_name, current_jackpot["users"][message.username]["amount"])
@@ -540,13 +534,6 @@ async def registered(message):
     registered_str = registered_str.replace("day", str(registered.day) + utils.num_suffix(registered.day))
     return registered_str
 
-@chat.commands
-async def hotpotato_start(message, reward: ParamType.POSITIVE_NUMBER):
-    chatters = api.get_chatters(channel.id)
-    chatters = random.shuffle(chatters)
-    hotpotato = {
-        "reward": reward,
-        "started": time(),
         "players": chatters
     }
 
@@ -565,10 +552,6 @@ async def on_ready(username, user_id): #
     await chat.send_message("mixcord logged in successfully!")
 
 # TODO: force user to leave game of hotpotato
-@chat
-async def user_left(data):
-    pass
-
 # triggered when a user joins the stream
 @chat
 async def user_joined(data):
