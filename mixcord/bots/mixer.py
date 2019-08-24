@@ -5,7 +5,7 @@ sys.path.append("..")
 import logging
 log = logging.getLogger("mixer")
 
-import random, json, asyncio, os, requests, utils
+import random, json, asyncio, os, utils
 from threading import Timer
 from time import time
 import dateutil.parser
@@ -142,7 +142,7 @@ async def avatar(message):
 @chat.commands
 async def avatar(message, user: ParamType.MIXER_USER):
     """Provides a link to the avatar of another Mixcord user."""
-    return "link to @{} avatar: {}".format(user.username, user.avatarUrl)
+    return "link to @{} avatar: {}".format(user.username, user.avatar_url)
 
 @chat.commands
 async def flip(message):
@@ -308,11 +308,9 @@ async def modulus(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER)
 async def btc(message, currency):
     """Gets the price of BTC given a currency code. Run the 'btc_list' command to see all supported currencies."""
 
-    try:
-        response = requests.get("https://blockchain.info/ticker")
-        prices = response.json()
-    except:
-        return "failed to parse data from coindesk api."
+    prices = await utils.get_btc_prices()
+    if not prices:
+        return "failed to download & parse data from blockchain api."
 
     price = prices.get(currency.upper())
     if price is None:
@@ -324,11 +322,9 @@ async def btc(message, currency):
 async def btc_list(message):
     """Lists all currency codes supported by the 'btc' command."""
 
-    try:
-        response = requests.get("https://blockchain.info/ticker")
-        prices = response.json()
-    except:
-        return "failed to parse data from coindesk api."
+    prices = await utils.get_btc_prices()
+    if not prices:
+        return "failed to download & parse data from blockchain api."
 
     currency_list = list(prices.keys())
     currencies = ", ".join(currency_list).lower()
@@ -337,7 +333,7 @@ async def btc_list(message):
 @chat.commands
 async def balance(message):
     """Outputs a users balance."""
-    mixcord_user = database.get_user(message.user_id)
+    mixcord_user = await database.get_user(message.user_id)
     if mixcord_user is None:
         return "your mixer account must be linked to your discord via mixcord before tracking balance."
     return "you have {} {}".format(mixcord_user["balance"], currency_name)
@@ -345,7 +341,7 @@ async def balance(message):
 @chat.commands
 async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
-    mixcord_user = database.get_user(user.id)
+    mixcord_user = await database.get_user(user.id)
     if mixcord_user is not None:
         return "@{} has {} {}".format(user.username, mixcord_user["balance"], currency_name)
     else:
@@ -355,20 +351,22 @@ async def balance(message, user: ParamType.MIXER_USER):
 async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NUMBER):
     """Send some of your balance to a tagged user."""
 
-    receiver_mixcord = database.get_user(user.id)
-    sender_mixcord = database.get_user(message.user_id)
+    receiver_mixcord = await database.get_user(user.id)
+    sender_mixcord = await database.get_user(message.user_id)
 
     if sender_mixcord is None:
         return "your mixer account must be linked to your discord via mixcord before sending balance."
     elif receiver_mixcord is None:
         return "you can't send {} to @{} until they link their discord to their mixer via mixcord.".format(currency_name, user.username)
+    elif receiver_mixcord["id"] == sender_mixcord["id"]:
+        return "you can't send money to yourself."
 
     amount = int(amount)
     if sender_mixcord["balance"] < amount:
         return "you have insufficient balance."
 
-    database.add_balance(sender_mixcord["user_id"], -amount)
-    database.add_balance(receiver_mixcord["user_id"], amount)
+    await database.add_balance(sender_mixcord["id"], -amount)
+    await database.add_balance(receiver_mixcord["id"], amount)
     return "you have successfully sent {} {} to @{}!".format(amount, currency_name, user.username)
 
 
