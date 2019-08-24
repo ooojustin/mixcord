@@ -173,10 +173,10 @@ async def bet(message, amount):
 
     won = random.randint(0, 1) == 1
     if won:
-        database.add_balance(message.user_id, amount)
+        await database.add_balance(message.user_id, amount)
         return "you won :D you now have {} {}.".format((mixcord_user["balance"] + amount), currency_name)
     else:
-        database.add_balance(message.user_id, -amount)
+        await database.add_balance(message.user_id, -amount)
         return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), currency_name)
 
 @chat.commands

@@ -12,7 +12,7 @@ async def run():
 
     api = MixerAPI(settings["mixer"]["client-id"], settings["mixer"]["client-secret"])
 
-    scope = [
+    scope = [ # all scopes needed for chatbot
     "chat:bypass_catbot", "chat:bypass_filter", "chat:bypass_links",
     "chat:bypass_slowchat", "chat:cancel_skill", "chat:change_ban",
     "chat:change_role", "chat:chat", "chat:clear_messages",
