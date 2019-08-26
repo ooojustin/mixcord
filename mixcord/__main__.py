@@ -16,9 +16,11 @@ import logging
 bots.mixer.log.setLevel(logging.ERROR)
 bots.discord.log.setLevel(logging.ERROR)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(asyncio.gather(
-    bots.discord.bot.start(settings["discord"]["token"]),
-    bots.mixer.chat.start(bots.mixer.auth),
-    bots.mixer.constellation.start())
-)
+# establish coroutines
+discord = bots.discord.bot.start(settings["discord"]["token"])
+chat = bots.mixer.chat.start(bots.mixer.auth)
+constellation = bots.mixer.constellation.start()
+
+# run coroutines using mixer.py utility func
+import mixer, mixer.utils
+mixer.utils.run(discord, chat, constellation)
