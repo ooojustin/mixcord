@@ -38,7 +38,7 @@ async def _init():
             CREATE TABLE "users" (
             	"id"	INTEGER NOT NULL UNIQUE,
             	"channel"	INTEGER NOT NULL UNIQUE,
-            	"balance"	INTEGER NOT NULL DEFAULT 0,
+            	"balance"	INTEGER NOT NULL DEFAULT 1000,
             	"discord"	INTEGER DEFAULT NULL,
             	"access_token"	TEXT DEFAULT NULL,
             	"refresh_token"	TEXT DEFAULT NULL,
