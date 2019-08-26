@@ -1,8 +1,3 @@
-# TODO: the mixer module will *eventually* be installed via pypi
-# i am temporarily spcifying the path during development of the wrapper
-import sys
-sys.path.append(R"C:\Users\justi\Documents\Programming\mixer.py")
-
 import json, time, utils, asyncio
 import mixer.exceptions as MixerExceptions
 from mixer.api import MixerAPI

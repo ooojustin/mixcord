@@ -15,10 +15,6 @@ from __main__ import settings as settings_all
 settings = settings_all["mixer"]
 currency_name = settings_all["mixcord"]["currency_name"]
 
-# TODO: the mixer module will *eventually* be installed via pypi
-# i am temporarily spcifying the path during development of the wrapper
-sys.path.append(R"C:\Users\justi\Documents\Programming\mixer.py")
-
 # mixer imports
 import mixer.exceptions as MixerExceptions
 from mixer.api import MixerAPI

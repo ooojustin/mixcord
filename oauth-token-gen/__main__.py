@@ -2,9 +2,6 @@ from _2captcha import _2Captcha
 from syncer import sync
 import requests, json, sys
 
-# TODO: the mixer module will *eventually* be installed via pypi
-# i am temporarily spcifying the path during development of the wrapper
-sys.path.append(R"C:\Users\justi\Documents\Programming\mixer.py")
 from mixer.api import MixerAPI
 from mixer.oauth import MixerOAuth
 
