@@ -116,12 +116,12 @@ async def uid(message, user: ParamType.MIXER_USER):
     """Tells a user the unique user id of a tagged user on Mixer."""
     return "@{} user id is: {}".format(user.username, user.id)
 
-@chat.command()
+@chat.command(aliases = ["pfp"])
 async def avatar(message):
     """Provides a user with a link to their Mixer avatar."""
     return "link to your avatar: {}".format(message.user_avatar)
 
-@chat.command()
+@chat.command(aliases = ["pfp"])
 async def avatar(message, user: ParamType.MIXER_USER):
     """Provides a link to the avatar of another Mixcord user."""
     return "link to @{} avatar: {}".format(user.username, user.avatar_url)
@@ -310,7 +310,7 @@ async def btc_list(message):
     currencies = ", ".join(currency_list).lower()
     return "supported currencies: " + currencies
 
-@chat.command()
+@chat.command(aliases = ["bal"])
 async def balance(message):
     """Outputs a users balance."""
     mixcord_user = await database.get_user(message.user_id)
@@ -318,7 +318,7 @@ async def balance(message):
         return "your mixer account must be linked to your discord via mixcord before tracking balance."
     return "you have {} {}".format(mixcord_user["balance"], currency_name)
 
-@chat.command()
+@chat.command(aliases = ["bal"])
 async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
     mixcord_user = await database.get_user(user.id)
