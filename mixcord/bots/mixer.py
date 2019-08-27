@@ -65,6 +65,10 @@ loop.run_until_complete(init())
 from bots.discord import send_announcement
 from bots.discord import bot as discord
 
+# get jokes from list (used for >joke command)
+jokes_raw = utils.read_all_text("./mixcord/jokes/jokes.json")
+jokes = json.loads(jokes_raw)
+
 @chat.command(roles = ["Owner"])
 async def shutdown(message):
 
@@ -508,6 +512,11 @@ async def registered(message):
     registered_str = created.strftime("%B %Y day @ %I:%M %p (%Z)").lower()
     registered_str = registered_str.replace("day", str(created.day) + utils.num_suffix(created.day))
     return registered_str
+
+@chat.command(aliases = ["lmao"])
+async def joke(message):
+    """Tells a funny joke."""
+    return random.choice(jokes)
 
 # triggered when the mixer bot is connected + authenticated
 @chat
