@@ -65,24 +65,16 @@ loop.run_until_complete(init())
 from bots.discord import send_announcement
 from bots.discord import bot as discord
 
-@chat.commands
+@chat.command(roles = ["Owner"])
 async def shutdown(message):
-
-    # make sure the person triggering the command is stream owner
-    if not message.has_role("Owner"):
-        return "permission denied. only owner can use 'shutdown' command."
 
     # shutdown the bot
     await chat.send_message("bot shutting down...")
     await asyncio.sleep(.5) # wait before exiting
     sys.exit(0)
 
-@chat.commands
+@chat.command(roles = ["Owner"])
 async def restart(message):
-
-    # make sure the person triggering the command is stream owner
-    if not message.has_role("Owner"):
-        return "permission denied. only owner can use 'restart' command."
 
     # restart the bot
     await chat.send_message("bot restarting... wait a few seconds")
@@ -92,17 +84,12 @@ async def restart(message):
     sys.argv.insert(0, '"{}"'.format(sys.executable))
     os.execl(sys.executable, *sys.argv)
 
-@chat.commands
+@chat.command(roles = ["Owner"])
 async def announce(message, announcement):
-
-    # make sure the person triggering the command is stream owner
-    if not message.has_role("Owner"):
-        return "permission denied. only owner can use 'announce' command."
-
     await send_announcement(announcement)
     return "announcement has been sent."
 
-@chat.commands
+@chat.command()
 async def uptime(message):
     """Displays how long the streamer has been live for."""
 
@@ -114,39 +101,39 @@ async def uptime(message):
     # return formatted uptime
     return channel.username + " has been live for: " + str(uptime)
 
-@chat.commands
+@chat.command()
 async def ping(message):
     """Returns 'pong!'"""
     return "pong!"
 
-@chat.commands
+@chat.command()
 async def uid(message):
     """Tells a user their unique user id on Mixer."""
     return "your user id is: {}".format(message.user_id)
 
-@chat.commands
+@chat.command()
 async def uid(message, user: ParamType.MIXER_USER):
     """Tells a user the unique user id of a tagged user on Mixer."""
     return "@{} user id is: {}".format(user.username, user.id)
 
-@chat.commands
+@chat.command()
 async def avatar(message):
     """Provides a user with a link to their Mixer avatar."""
     return "link to your avatar: {}".format(message.user_avatar)
 
-@chat.commands
+@chat.command()
 async def avatar(message, user: ParamType.MIXER_USER):
     """Provides a link to the avatar of another Mixcord user."""
     return "link to @{} avatar: {}".format(user.username, user.avatar_url)
 
-@chat.commands
+@chat.command()
 async def flip(message):
     """Flips a coin to determine if it'll land on heads or tails."""
     choice = random.randint(0, 1)
     desc = "heads" if choice else "tails"
     return "flipped a coin and picked: " + desc
 
-@chat.commands
+@chat.command()
 async def bet(message, amount):
     """You have a 50% chance of doubling your bet, and a 50% chance of losing it."""
 
@@ -175,7 +162,7 @@ async def bet(message, amount):
         await database.add_balance(message.user_id, -amount)
         return "you lost :( you now have {} {}.".format((mixcord_user["balance"] - amount), currency_name)
 
-@chat.commands
+@chat.command()
 async def bet(message, user: ParamType.MIXER_USER, amount):
     """Challenge another member to a 50/50 coin flip! Winner takes the losers bet."""
 
@@ -261,25 +248,25 @@ async def bet(message, user: ParamType.MIXER_USER, amount):
         await chat.send_message("@{} your pending bet has timed out.".format(message.username))
 pending_bets = dict()
 
-@chat.commands
+@chat.command()
 async def add(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Adds number1 and number2 together and outputs the sum."""
     sum = number1 + number2
     return "sum = " + str(sum)
 
-@chat.commands
+@chat.command()
 async def subtract(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Subtracts number2 from number1 and outputs the difference."""
     diff = number1 - number2
     return "difference = " + str(diff)
 
-@chat.commands
+@chat.command()
 async def multiply(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Multiplies number1 and number2 and outputs the product."""
     prod = number1 * number2
     return "product = " + str(prod)
 
-@chat.commands
+@chat.command()
 async def divide(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Divides number1 by number2 and outputs the quotient."""
     try:
@@ -288,7 +275,7 @@ async def divide(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     except:
         return "failed to divide provided values."
 
-@chat.commands
+@chat.command()
 async def modulus(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER):
     """Products the remainder of the result of number1 divided by number2."""
     try:
@@ -297,7 +284,7 @@ async def modulus(message, number1: ParamType.NUMBER, number2: ParamType.NUMBER)
     except:
         return "failed to perform modulo operation on provided values."
 
-@chat.commands
+@chat.command()
 async def btc(message, currency):
     """Gets the price of BTC given a currency code. Run the 'btc_list' command to see all supported currencies."""
 
@@ -311,7 +298,7 @@ async def btc(message, currency):
 
     return "The price of BTC in {} is {}{}".format(currency.upper(), price["symbol"], price["15m"])
 
-@chat.commands
+@chat.command()
 async def btc_list(message):
     """Lists all currency codes supported by the 'btc' command."""
 
@@ -323,7 +310,7 @@ async def btc_list(message):
     currencies = ", ".join(currency_list).lower()
     return "supported currencies: " + currencies
 
-@chat.commands
+@chat.command()
 async def balance(message):
     """Outputs a users balance."""
     mixcord_user = await database.get_user(message.user_id)
@@ -331,7 +318,7 @@ async def balance(message):
         return "your mixer account must be linked to your discord via mixcord before tracking balance."
     return "you have {} {}".format(mixcord_user["balance"], currency_name)
 
-@chat.commands
+@chat.command()
 async def balance(message, user: ParamType.MIXER_USER):
     """Outputs the balance of a tagged user."""
     mixcord_user = await database.get_user(user.id)
@@ -340,7 +327,7 @@ async def balance(message, user: ParamType.MIXER_USER):
     else:
         return "their mixer account must be linked to their discord before tracking balance."
 
-@chat.commands
+@chat.command()
 async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NUMBER):
     """Send some of your balance to a tagged user."""
 
@@ -363,11 +350,8 @@ async def pay(message, user: ParamType.MIXER_USER, amount: ParamType.POSITIVE_NU
     return "you have successfully sent {} {} to @{}!".format(amount, currency_name, user.username)
 
 
-@chat.commands
+@chat.command(roles = ["Owner"])
 async def lunch(message):
-
-    if not message.has_role("Owner"):
-        return "permission denied. only owner can use 'lunch' command."
 
     await chat.send_method_packet(
         "vote:start",
@@ -376,7 +360,7 @@ async def lunch(message):
 
     return "starting poll for lunch... cast your vote!"
 
-@chat.commands
+@chat.command()
 async def jackpot(message):
     """Outputs information about the current jackpot, if there's one running."""
 
@@ -395,7 +379,7 @@ async def jackpot(message):
     return response
 current_jackpot = None
 
-@chat.commands
+@chat.command()
 async def link(message):
 
     # make sure they're not already linked
@@ -469,11 +453,8 @@ async def jackpot_end(duration):
     await database.add_balance(winner["id"], current_jackpot["total"])
     current_jackpot = None
 
-@chat.commands
+@chat.command(roles = ["Owner"])
 async def jackpot_start(message, duration: ParamType.POSITIVE_NUMBER):
-
-    if not message.has_role("Owner"):
-        return "only the stream owner can start a jackpot."
 
     # start a jackpot
     global current_jackpot
@@ -489,7 +470,7 @@ async def jackpot_start(message, duration: ParamType.POSITIVE_NUMBER):
     asyncio.ensure_future(coro)
     return "jackpot has been started! it will end in {} seconds...".format(duration)
 
-@chat.commands
+@chat.command()
 async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
     """Deposits specified amount of balance into the current jackpot."""
 
@@ -516,11 +497,11 @@ async def deposit(message, amount: ParamType.POSITIVE_NUMBER):
         }
         return "you have entered the pot with {} {}.".format(amount, currency_name)
 
-@chat.commands
+@chat.command()
 async def discord(message):
     return "here is a link to my discord server: https://justin.ooo/discord - use the '{}mixcord' command when you join!".format(chat.commands.prefix)
 
-@chat.commands
+@chat.command()
 async def registered(message):
     """Tells a used when they registered on Mixer."""
     created = (await api.get_user(message.user_id)).created_at
